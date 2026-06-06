@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { publicClient, TOKENS } from "@/lib/celo";
-import { formatUnits, parseAbiItem } from "viem";
+import { formatUnits, parseAbiItem, getAddress } from "viem";
 
 // ─── x402 Payment Gate ────────────────────────────────────────────────────────
 // Price: $0.01 USDC per query
@@ -34,6 +34,7 @@ async function verifyX402Payment(request: NextRequest): Promise<boolean> {
 
 // ─── On-chain intelligence fetcher ───────────────────────────────────────────
 async function analyzeWallet(address: `0x${string}`) {
+  address = getAddress(address);
   const [celoBalance, usdcBalance, usdtBalance, latestBlock] =
     await Promise.all([
       publicClient.getBalance({ address }),

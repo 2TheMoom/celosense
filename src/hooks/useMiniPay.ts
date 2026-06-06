@@ -12,9 +12,11 @@ export function useMiniPay() {
 
   useEffect(() => {
     const detect = () => {
-      if (typeof window !== "undefined" && window.ethereum) {
-        const detected = Boolean((window.ethereum as any).isMiniPay);
+      if (typeof window !== "undefined" && (window as any).ethereum) {
+        const detected = Boolean((window as any).ethereum.isMiniPay);
         setIsMiniPay(detected);
+
+        // Only auto-connect inside MiniPay — never on desktop
         if (detected && !isConnected) {
           connect({ connector: injected({ target: "metaMask" }) });
         }

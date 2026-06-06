@@ -4,7 +4,7 @@ import { privateKeyToAccount } from "viem/accounts";
 
 export const publicClient = createPublicClient({
   chain: celo,
-  transport: http("https://fern-rough-tent.celo-mainnet.quiknode.pro/"),
+  transport: http("https://forno.celo.org")
 });
 
 export function getAgentWalletClient() {
@@ -15,7 +15,7 @@ export function getAgentWalletClient() {
   return createWalletClient({
     account,
     chain: celo,
-    transport: http("https://fern-rough-tent.celo-mainnet.quiknode.pro/"),
+    transport: http("https://forno.celo.org")
   });
 }
 

@@ -12,7 +12,7 @@ const config: HardhatUserConfig = {
   },
   networks: {
     celo: {
-      url: "https://fern-rough-tent.celo-mainnet.quiknode.pro/",
+      url: "https://forno.celo.org",
       accounts: process.env.DEPLOYER_PRIVATE_KEY
         ? [process.env.DEPLOYER_PRIVATE_KEY]
         : [],
@@ -27,16 +27,13 @@ const config: HardhatUserConfig = {
     },
   },
   etherscan: {
-    apiKey: {
-      celo: process.env.CELOSCAN_API_KEY || "",
-      celoSepolia: process.env.CELOSCAN_API_KEY || "",
-    },
+    apiKey: process.env.CELOSCAN_API_KEY || "",
     customChains: [
       {
         network: "celo",
         chainId: 42220,
         urls: {
-          apiURL: "https://api.celoscan.io/api",
+          apiURL: "https://api.etherscan.io/v2/api?chainid=42220",
           browserURL: "https://celoscan.io",
         },
       },
@@ -44,7 +41,7 @@ const config: HardhatUserConfig = {
         network: "celoSepolia",
         chainId: 44787,
         urls: {
-          apiURL: "https://api-alfajores.celoscan.io/api",
+          apiURL: "https://api.etherscan.io/v2/api?chainid=44787",
           browserURL: "https://alfajores.celoscan.io",
         },
       },
