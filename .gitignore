@@ -1,0 +1,12 @@
+.env
+.env.local
+.env*.local
+node_modules/
+.next/
+out/
+dist/
+artifacts/
+cache/
+typechain-types/
+coverage/
+coverage.json
