@@ -5,6 +5,7 @@ import { useMiniPay } from "@/hooks/useMiniPay";
 import { WalletConnect } from "@/components/WalletConnect";
 import { IntelligencePanel } from "@/components/IntelligencePanel";
 import { RegistryPanel } from "@/components/RegistryPanel";
+import { Logo } from "@/components/Logo";
 
 export default function Home() {
   const { isMiniPay, isDetecting, address, isConnected } = useMiniPay();
@@ -15,7 +16,7 @@ export default function Home() {
       <header className="header">
         <div className="header-left">
           <div className="logo">
-            <span className="logo-mark">◈</span>
+            <Logo size={36} />
             <span className="logo-text">CeloSense</span>
           </div>
           <span className="tagline">on-chain intelligence</span>
@@ -57,7 +58,7 @@ export default function Home() {
       {!isConnected && !isDetecting && (
         <div className="connect-prompt">
           <div className="connect-inner">
-            <div className="connect-icon">◈</div>
+            <Logo size={64} />
             <h2>Connect to CeloSense</h2>
             <p>Connect your wallet to access on-chain intelligence for the Celo ecosystem.</p>
             <WalletConnect large />
@@ -99,7 +100,7 @@ export default function Home() {
         className="credit-tag"
         style={{ display: "block", textDecoration: "none" }}
       >
-        Abu Olumi · @olumi441
+        Abu Olumi
       </a>
     </main>
   );
