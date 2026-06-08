@@ -33,7 +33,7 @@ export default function Landing() {
             <span className="land-brand-name">CELOSENSE</span>
           </div>
           <div className="land-nav-links">
-            <a href="https://celoscan.io/address/0x66Aa97F3Aa2226543f1A570824f6a96404a8BC4D#code" target="_blank" rel="noopener noreferrer" className="land-nav-link">Contract</a>
+            <a href="https://celoscan.io/address/0xda0f76E12d9571f3fc62D3C65CFF1662E4235046#code" target="_blank" rel="noopener noreferrer" className="land-nav-link">Contract</a>
             <a href="https://github.com/2TheMoom/celosense" target="_blank" rel="noopener noreferrer" className="land-nav-link">GitHub</a>
             <a href="/app" className="land-btn-sm">Launch App</a>
           </div>
@@ -60,7 +60,7 @@ export default function Landing() {
           </p>
           <div className="land-hero-ctas">
             <a href="/app" className="land-btn-primary">Launch App</a>
-            <a href="https://celoscan.io/address/0x66Aa97F3Aa2226543f1A570824f6a96404a8BC4D#code" target="_blank" rel="noopener noreferrer" className="land-btn-secondary">View Contract ↗</a>
+            <a href="https://celoscan.io/address/0xda0f76E12d9571f3fc62D3C65CFF1662E4235046#code" target="_blank" rel="noopener noreferrer" className="land-btn-secondary">View Contract ↗</a>
           </div>
           <div className="land-stat-row">
             <div className="land-stat">
@@ -171,7 +171,7 @@ export default function Landing() {
             <span className="land-brand-name" style={{ fontSize: 13 }}>CELOSENSE</span>
           </div>
           <div className="land-footer-links">
-            <a href="https://celoscan.io/address/0x66Aa97F3Aa2226543f1A570824f6a96404a8BC4D#code" target="_blank" rel="noopener noreferrer" className="land-footer-link">Contract</a>
+            <a href="https://celoscan.io/address/0xda0f76E12d9571f3fc62D3C65CFF1662E4235046#code" target="_blank" rel="noopener noreferrer" className="land-footer-link">Contract</a>
             <a href="https://github.com/2TheMoom/celosense" target="_blank" rel="noopener noreferrer" className="land-footer-link">GitHub</a>
             <a href="/app" className="land-footer-link">App</a>
           </div>
