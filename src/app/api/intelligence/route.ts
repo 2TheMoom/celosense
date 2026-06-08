@@ -2,85 +2,76 @@ import { NextRequest, NextResponse } from "next/server";
 import { publicClient, TOKENS } from "@/lib/celo";
 import { formatUnits, parseAbiItem, getAddress } from "viem";
 
-// ─── x402 Payment Gate ────────────────────────────────────────────────────────
-// Price: $0.01 USDC per query
-// Uses thirdweb facilitator for settlement on Celo
-const QUERY_PRICE_USD = 0.01;
-const FEE_RECIPIENT = process.env.FEE_RECIPIENT as `0x${string}`;
+const FEE_RECIPIENT = (process.env.FEE_RECIPIENT || "0x701F6eab7854509A578143f51b2AEc5BcC308De7").toLowerCase();
+const USDC_ADDRESS = "0xceba9300f2b948710d2653dd7b07f33a8b32118c";
+const QUERY_PRICE_RAW = 10000n; // $0.01 USDC in raw units (6 decimals)
 
+// ─── Verify payment on-chain ──────────────────────────────────────────────────
 async function verifyX402Payment(request: NextRequest): Promise<boolean> {
-  // In production: use thirdweb settlePayment() here
-  // For MVP/testing: check for payment header presence
-  const paymentHeader =
-    request.headers.get("X-PAYMENT") ||
-    request.headers.get("PAYMENT-SIGNATURE");
+  const txHash = request.headers.get("X-PAYMENT") as `0x${string}` | null;
+  if (!txHash || !txHash.startsWith("0x")) return false;
 
-  if (!paymentHeader) return false;
+  try {
+    const receipt = await publicClient.getTransactionReceipt({ hash: txHash });
+    if (!receipt || receipt.status !== "success") return false;
 
-  // TODO: Replace with full thirdweb settlement:
-  // const result = await settlePayment({
-  //   resourceUrl: request.url,
-  //   method: "GET",
-  //   paymentData: paymentHeader,
-  //   payTo: FEE_RECIPIENT,
-  //   network: celo,
-  //   price: `$${QUERY_PRICE_USD}`,
-  //   facilitator: thirdwebFacilitator,
-  // });
-  // return result.status === 200;
+    // Check logs for USDC Transfer to FEE_RECIPIENT of at least $0.01
+    for (const log of receipt.logs) {
+      if (log.address.toLowerCase() !== USDC_ADDRESS) continue;
+      // Transfer(address indexed from, address indexed to, uint256 value)
+      if (log.topics.length < 3) continue;
+      const to = "0x" + log.topics[2]?.slice(26);
+      if (to.toLowerCase() !== FEE_RECIPIENT) continue;
+      const value = BigInt(log.data);
+      if (value >= QUERY_PRICE_RAW) return true;
+    }
 
-  return true; // remove when thirdweb settlement is wired up
+    return false;
+  } catch {
+    return false;
+  }
 }
 
 // ─── On-chain intelligence fetcher ───────────────────────────────────────────
 async function analyzeWallet(address: `0x${string}`) {
   address = getAddress(address);
-  const [celoBalance, usdcBalance, usdtBalance, latestBlock] =
-    await Promise.all([
-      publicClient.getBalance({ address }),
-      publicClient.readContract({
-        address: TOKENS.USDC,
-        abi: [parseAbiItem("function balanceOf(address) view returns (uint256)")],
-        functionName: "balanceOf",
-        args: [address],
-      }),
-      publicClient.readContract({
-        address: TOKENS.USDT,
-        abi: [parseAbiItem("function balanceOf(address) view returns (uint256)")],
-        functionName: "balanceOf",
-        args: [address],
-      }),
-      publicClient.getBlockNumber(),
-    ]);
 
-  // Fetch recent USDC Transfer events involving this wallet (last ~500 blocks ≈ ~8 min)
+  const [celoBalance, usdcBalance, usdtBalance, latestBlock] = await Promise.all([
+    publicClient.getBalance({ address }),
+    publicClient.readContract({
+      address: TOKENS.USDC,
+      abi: [parseAbiItem("function balanceOf(address) view returns (uint256)")],
+      functionName: "balanceOf",
+      args: [address],
+    }),
+    publicClient.readContract({
+      address: TOKENS.USDT,
+      abi: [parseAbiItem("function balanceOf(address) view returns (uint256)")],
+      functionName: "balanceOf",
+      args: [address],
+    }),
+    publicClient.getBlockNumber(),
+  ]);
+
   const fromBlock = latestBlock - 500n;
   const transferLogs = await publicClient.getLogs({
     address: TOKENS.USDC,
-    event: parseAbiItem(
-      "event Transfer(address indexed from, address indexed to, uint256 value)"
-    ),
+    event: parseAbiItem("event Transfer(address indexed from, address indexed to, uint256 value)"),
     args: { from: address },
     fromBlock,
     toBlock: latestBlock,
   });
 
-  const recentTransfers = transferLogs.map((log) => ({
+  const recentTransfers = transferLogs.map((log: any) => ({
     to: log.args.to,
     amount: formatUnits(log.args.value ?? 0n, 6),
     block: log.blockNumber?.toString(),
     txHash: log.transactionHash,
   }));
 
-  // Whale flag: any single transfer > 10,000 USDC in last 500 blocks
-  const whaleActivity = recentTransfers.filter(
-    (t) => parseFloat(t.amount) > 10_000
-  );
-
+  const whaleActivity = recentTransfers.filter((t: any) => parseFloat(t.amount) > 10_000);
   const usdcFloat = parseFloat(formatUnits(usdcBalance as bigint, 6));
-  const usdtFloat = parseFloat(formatUnits(usdtBalance as bigint, 6));
 
-  // Simple activity score: 0–100
   const activityScore = Math.min(
     100,
     recentTransfers.length * 10 + (usdcFloat > 1000 ? 20 : 0) + (whaleActivity.length > 0 ? 30 : 0)
@@ -111,21 +102,15 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Invalid address" }, { status: 400 });
   }
 
-  // x402 payment check
   const paid = await verifyX402Payment(request);
   if (!paid) {
     return NextResponse.json(
-      {
-        error: "Payment required",
-        price: `$${QUERY_PRICE_USD}`,
-        token: "USDC",
-        network: "celo",
-      },
+      { error: "Payment required", price: "$0.01", token: "USDC", network: "celo" },
       {
         status: 402,
         headers: {
           "X-Payment-Required": "true",
-          "X-Payment-Price": QUERY_PRICE_USD.toString(),
+          "X-Payment-Price": "0.01",
           "X-Payment-Token": "USDC",
         },
       }

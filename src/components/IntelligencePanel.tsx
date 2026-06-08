@@ -1,6 +1,10 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { useWriteContract, useWaitForTransactionReceipt, useAccount } from "wagmi";
+import { USDC_ADDRESS, USDC_ABI, QUERY_PRICE } from "@/lib/usdc";
+
+const FEE_RECIPIENT = (process.env.NEXT_PUBLIC_FEE_RECIPIENT || "0x701F6eab7854509A578143f51b2AEc5BcC308De7") as `0x${string}`;
 
 interface Transfer {
   to: string;
@@ -30,30 +34,65 @@ export function IntelligencePanel({ address, isMiniPay }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [queryAddress, setQueryAddress] = useState(address);
+  const [step, setStep] = useState<"idle" | "paying" | "confirming" | "fetching">("idle");
+
+  const { writeContractAsync } = useWriteContract();
 
   const fetchIntelligence = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setData(null);
+
     try {
+      // Step 1: Send $0.01 USDC to FEE_RECIPIENT
+      setStep("paying");
+      const txHash = await writeContractAsync({
+        address: USDC_ADDRESS,
+        abi: USDC_ABI,
+        functionName: "transfer",
+        args: [FEE_RECIPIENT, QUERY_PRICE],
+      });
+
+      // Step 2: Wait briefly for tx to land
+      setStep("confirming");
+      await new Promise((res) => setTimeout(res, 3000));
+
+      // Step 3: Fetch intelligence with tx hash as proof
+      setStep("fetching");
       const res = await fetch(`/api/intelligence?address=${queryAddress}`, {
         headers: {
-          // x402 payment header — in production this is signed by the user's wallet
-          // via thirdweb useFetchWithPayment hook
-          "X-PAYMENT": "demo-payment-header",
+          "X-PAYMENT": txHash,
         },
       });
+
       if (!res.ok) {
         const err = await res.json();
         throw new Error(err.error || "Failed to fetch");
       }
+
       const json = await res.json();
       setData(json);
     } catch (e: any) {
-      setError(e.message);
+      if (e.message?.includes("User rejected")) {
+        setError("Transaction rejected — query cancelled.");
+      } else if (e.message?.includes("insufficient")) {
+        setError("Insufficient USDC balance. You need at least $0.01 USDC to query.");
+      } else {
+        setError(e.message || "Failed to fetch intelligence");
+      }
     } finally {
       setLoading(false);
+      setStep("idle");
     }
-  }, [queryAddress]);
+  }, [queryAddress, writeContractAsync]);
+
+  const getButtonLabel = () => {
+    if (!loading) return <>⬡ Analyze — $0.01 USDC</>;
+    if (step === "paying") return <><span className="spinner" /> Approve payment…</>;
+    if (step === "confirming") return <><span className="spinner" /> Confirming tx…</>;
+    if (step === "fetching") return <><span className="spinner" /> Fetching data…</>;
+    return <><span className="spinner" /> Loading…</>;
+  };
 
   return (
     <div>
@@ -66,34 +105,18 @@ export function IntelligencePanel({ address, isMiniPay }: Props) {
             value={queryAddress}
             onChange={(e) => setQueryAddress(e.target.value as `0x${string}`)}
             placeholder="0x wallet address"
-            style={{
-              flex: 1,
-              background: "var(--surface2)",
-              border: "1px solid var(--border2)",
-              borderRadius: 3,
-              padding: "8px 12px",
-              color: "var(--text)",
-              fontFamily: "var(--mono)",
-              fontSize: 12,
-              outline: "none",
-            }}
+            style={{ flex: 1 }}
           />
           <button
             className="btn btn-primary"
             onClick={fetchIntelligence}
             disabled={loading}
           >
-            {loading ? (
-              <>
-                <span className="spinner" /> Analyzing…
-              </>
-            ) : (
-              <>⬡ Analyze — $0.01 USDC</>
-            )}
+            {getButtonLabel()}
           </button>
         </div>
         <div style={{ marginTop: 8, fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)" }}>
-          Each query costs $0.01 USDC via x402 · paid from your connected wallet
+          Each query costs $0.01 USDC · paid on-chain from your wallet
         </div>
       </div>
 
@@ -101,7 +124,6 @@ export function IntelligencePanel({ address, isMiniPay }: Props) {
 
       {data && (
         <>
-          {/* Whale alert */}
           {data.isWhale && (
             <div className="alert alert-whale">
               <span className="alert-icon">⚠</span>
@@ -121,50 +143,39 @@ export function IntelligencePanel({ address, isMiniPay }: Props) {
             </div>
           )}
 
-          {/* Balances */}
           <div className="card section-gap">
             <div className="card-title">Balances</div>
             <div className="card-grid">
               <div className="metric">
                 <div className="metric-label">CELO</div>
-                <div className="metric-value green">
-                  {parseFloat(data.balances.celo).toFixed(4)}
-                </div>
+                <div className="metric-value green">{parseFloat(data.balances.celo).toFixed(4)}</div>
                 <div className="metric-sub">native</div>
               </div>
               <div className="metric">
                 <div className="metric-label">USDC</div>
-                <div className="metric-value">
-                  {parseFloat(data.balances.usdc).toFixed(2)}
-                </div>
+                <div className="metric-value">{parseFloat(data.balances.usdc).toFixed(2)}</div>
                 <div className="metric-sub">stablecoin</div>
               </div>
               <div className="metric">
                 <div className="metric-label">USDT</div>
-                <div className="metric-value">
-                  {parseFloat(data.balances.usdt).toFixed(2)}
-                </div>
+                <div className="metric-value">{parseFloat(data.balances.usdt).toFixed(2)}</div>
                 <div className="metric-sub">stablecoin</div>
               </div>
               <div className="metric">
                 <div className="metric-label">Activity Score</div>
-                <div className={`metric-value ${data.activityScore > 60 ? "gold" : data.activityScore > 30 ? "green" : ""}`}>
+                <div className={`metric-value ${data.activityScore > 60 ? "navy" : data.activityScore > 30 ? "green" : ""}`}>
                   {data.activityScore}
                   <span style={{ fontSize: 14, color: "var(--muted)" }}>/100</span>
                 </div>
                 <div className="score-bar-wrap">
                   <div className="score-bar-track">
-                    <div
-                      className="score-bar-fill"
-                      style={{ width: `${data.activityScore}%` }}
-                    />
+                    <div className="score-bar-fill" style={{ width: `${data.activityScore}%` }} />
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Recent transfers */}
           <div className="card section-gap">
             <div className="card-title">
               Recent USDC Transfers
@@ -180,22 +191,13 @@ export function IntelligencePanel({ address, isMiniPay }: Props) {
                   const isWhale = parseFloat(t.amount) > 10_000;
                   return (
                     <div key={i} className={`transfer-row ${isWhale ? "whale" : ""}`}>
-                      <span className="transfer-to">
-                        → {t.to?.slice(0, 8)}…{t.to?.slice(-4)}
-                      </span>
+                      <span className="transfer-to">→ {t.to?.slice(0, 8)}…{t.to?.slice(-4)}</span>
                       <span className={`transfer-amount ${isWhale ? "whale" : ""}`}>
                         {parseFloat(t.amount).toLocaleString()} USDC
                       </span>
                       {isWhale && <span className="whale-tag">WHALE</span>}
                       {t.txHash && (
-                        <a
-                          href={`https://celoscan.io/tx/${t.txHash}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="tx-link"
-                        >
-                          ↗
-                        </a>
+                        <a href={`https://celoscan.io/tx/${t.txHash}`} target="_blank" rel="noopener noreferrer" className="tx-link">↗</a>
                       )}
                     </div>
                   );
@@ -204,7 +206,6 @@ export function IntelligencePanel({ address, isMiniPay }: Props) {
             )}
           </div>
 
-          {/* Footer meta */}
           <div style={{ marginTop: 12, fontSize: 11, color: "var(--faint)", fontFamily: "var(--mono)", textAlign: "right" }}>
             analyzed at {new Date(data.analyzedAt).toLocaleTimeString()}
           </div>
