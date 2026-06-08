@@ -1,10 +1,9 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { useWriteContract, useWaitForTransactionReceipt, useAccount } from "wagmi";
+import { useWriteContract } from "wagmi";
+import { REGISTRY_ADDRESS, REGISTRY_ABI } from "@/lib/celo";
 import { USDC_ADDRESS, USDC_ABI, QUERY_PRICE } from "@/lib/usdc";
-
-const FEE_RECIPIENT = (process.env.NEXT_PUBLIC_FEE_RECIPIENT || "0x701F6eab7854509A578143f51b2AEc5BcC308De7") as `0x${string}`;
 
 interface Transfer {
   to: string;
@@ -34,7 +33,7 @@ export function IntelligencePanel({ address, isMiniPay }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [queryAddress, setQueryAddress] = useState(address);
-  const [step, setStep] = useState<"idle" | "paying" | "confirming" | "fetching">("idle");
+  const [step, setStep] = useState<"idle" | "approving" | "recording" | "confirming" | "fetching">("idle");
 
   const { writeContractAsync } = useWriteContract();
 
@@ -44,25 +43,32 @@ export function IntelligencePanel({ address, isMiniPay }: Props) {
     setData(null);
 
     try {
-      // Step 1: Send $0.01 USDC to FEE_RECIPIENT
-      setStep("paying");
-      const txHash = await writeContractAsync({
+      // Step 1: Approve USDC spend on registry contract
+      setStep("approving");
+      await writeContractAsync({
         address: USDC_ADDRESS,
         abi: USDC_ABI,
-        functionName: "transfer",
-        args: [FEE_RECIPIENT, QUERY_PRICE],
+        functionName: "approve",
+        args: [REGISTRY_ADDRESS, QUERY_PRICE],
       });
 
-      // Step 2: Wait briefly for tx to land
+      // Step 2: Call recordQuery on registry — pays USDC + emits event on our contract
+      setStep("recording");
+      const txHash = await writeContractAsync({
+        address: REGISTRY_ADDRESS,
+        abi: REGISTRY_ABI,
+        functionName: "recordQuery",
+        args: [queryAddress as `0x${string}`],
+      });
+
+      // Step 3: Wait for confirmation
       setStep("confirming");
       await new Promise((res) => setTimeout(res, 3000));
 
-      // Step 3: Fetch intelligence with tx hash as proof
+      // Step 4: Fetch intelligence with tx hash as proof
       setStep("fetching");
       const res = await fetch(`/api/intelligence?address=${queryAddress}`, {
-        headers: {
-          "X-PAYMENT": txHash,
-        },
+        headers: { "X-PAYMENT": txHash },
       });
 
       if (!res.ok) {
@@ -75,7 +81,7 @@ export function IntelligencePanel({ address, isMiniPay }: Props) {
     } catch (e: any) {
       if (e.message?.includes("User rejected")) {
         setError("Transaction rejected — query cancelled.");
-      } else if (e.message?.includes("insufficient")) {
+      } else if (e.message?.includes("insufficient") || e.message?.includes("ERC20")) {
         setError("Insufficient USDC balance. You need at least $0.01 USDC to query.");
       } else {
         setError(e.message || "Failed to fetch intelligence");
@@ -88,15 +94,15 @@ export function IntelligencePanel({ address, isMiniPay }: Props) {
 
   const getButtonLabel = () => {
     if (!loading) return <>⬡ Analyze — $0.01 USDC</>;
-    if (step === "paying") return <><span className="spinner" /> Approve payment…</>;
-    if (step === "confirming") return <><span className="spinner" /> Confirming tx…</>;
+    if (step === "approving") return <><span className="spinner" /> Approving USDC…</>;
+    if (step === "recording") return <><span className="spinner" /> Recording query…</>;
+    if (step === "confirming") return <><span className="spinner" /> Confirming…</>;
     if (step === "fetching") return <><span className="spinner" /> Fetching data…</>;
     return <><span className="spinner" /> Loading…</>;
   };
 
   return (
     <div>
-      {/* Query bar */}
       <div className="card" style={{ marginBottom: 16 }}>
         <div className="card-title">Query Wallet Intelligence</div>
         <div style={{ display: "flex", gap: 10 }}>
@@ -116,7 +122,7 @@ export function IntelligencePanel({ address, isMiniPay }: Props) {
           </button>
         </div>
         <div style={{ marginTop: 8, fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)" }}>
-          Each query costs $0.01 USDC · paid on-chain from your wallet
+          Each query costs $0.01 USDC · recorded on-chain to CeloSenseRegistry
         </div>
       </div>
 

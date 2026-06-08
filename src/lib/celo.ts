@@ -4,26 +4,24 @@ import { privateKeyToAccount } from "viem/accounts";
 
 export const publicClient = createPublicClient({
   chain: celo,
-  transport: http("https://forno.celo.org")
+  transport: http("https://forno.celo.org"),
 });
 
 export function getAgentWalletClient() {
   if (!process.env.AGENT_PRIVATE_KEY) throw new Error("AGENT_PRIVATE_KEY not set");
-  const account = privateKeyToAccount(
-    process.env.AGENT_PRIVATE_KEY as `0x${string}`
-  );
+  const account = privateKeyToAccount(process.env.AGENT_PRIVATE_KEY as `0x${string}`);
   return createWalletClient({
     account,
     chain: celo,
-    transport: http("https://forno.celo.org")
+    transport: http("https://forno.celo.org"),
   });
 }
 
 export function getMiniPayWalletClient() {
-  if (typeof window === "undefined" || !window.ethereum) return null;
+  if (typeof window === "undefined" || !(window as any).ethereum) return null;
   return createWalletClient({
     chain: celo,
-    transport: custom(window.ethereum),
+    transport: custom((window as any).ethereum),
   });
 }
 
@@ -58,6 +56,13 @@ export const REGISTRY_ABI = [
     outputs: [],
   },
   {
+    name: "recordQuery",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [{ name: "target", type: "address" }],
+    outputs: [],
+  },
+  {
     name: "getStatus",
     type: "function",
     stateMutability: "view",
@@ -75,10 +80,33 @@ export const REGISTRY_ABI = [
     outputs: [{ name: "", type: "uint256" }],
   },
   {
+    name: "totalQueries",
+    type: "function",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+  {
+    name: "queryCount",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "wallet", type: "address" }],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+  {
     name: "WalletRegistered",
     type: "event",
     inputs: [
       { name: "wallet", type: "address", indexed: true },
+      { name: "timestamp", type: "uint256", indexed: false },
+    ],
+  },
+  {
+    name: "QueryRecorded",
+    type: "event",
+    inputs: [
+      { name: "querier", type: "address", indexed: true },
+      { name: "target", type: "address", indexed: true },
       { name: "timestamp", type: "uint256", indexed: false },
     ],
   },
