@@ -203,6 +203,7 @@ body {
   cursor: pointer;
   transition: all 0.15s;
   border: 2px solid transparent;
+  white-space: nowrap;
 }
 .btn-primary {
   background: var(--navy);
@@ -245,6 +246,17 @@ body {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 12px;
+}
+
+/* ─── Query bar ───────────────────────────────────────────────────────────── */
+.query-bar {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+.query-bar input {
+  flex: 1;
+  min-width: 0;
 }
 
 /* ─── Metric tiles ────────────────────────────────────────────────────────── */
@@ -402,10 +414,9 @@ input[type="text"] {
   font-size: 12px;
   outline: none;
   transition: border-color 0.15s;
+  width: 100%;
 }
-input[type="text"]:focus {
-  border-color: var(--navy);
-}
+input[type="text"]:focus { border-color: var(--navy); }
 input[type="text"]::placeholder { color: var(--faint); }
 
 /* ─── Misc ────────────────────────────────────────────────────────────────── */
@@ -480,7 +491,6 @@ input[type="text"]::placeholder { color: var(--faint); }
 /* ─── Landing Page ────────────────────────────────────────────────────────── */
 .land { background: var(--bg); min-height: 100vh; }
 
-/* Nav */
 .land-nav {
   position: sticky; top: 0; z-index: 50;
   background: var(--bg);
@@ -510,7 +520,6 @@ input[type="text"]::placeholder { color: var(--faint); }
 }
 .land-btn-sm:hover { background: var(--navy-dim); }
 
-/* Hero */
 .land-hero {
   padding: 80px 24px 60px;
   border-bottom: 1px solid var(--border);
@@ -560,7 +569,6 @@ input[type="text"]::placeholder { color: var(--faint); }
 }
 .land-btn-secondary:hover { border-color: var(--navy); color: var(--navy); }
 
-/* Stats */
 .land-stat-row {
   display: flex; align-items: center; justify-content: center;
   gap: 32px; flex-wrap: wrap;
@@ -577,7 +585,6 @@ input[type="text"]::placeholder { color: var(--faint); }
 }
 .land-stat-divider { width: 1px; height: 40px; background: var(--border); }
 
-/* Sections */
 .land-section { padding: 72px 24px; }
 .land-section-alt { background: var(--surface); }
 .land-section-inner { max-width: 1000px; margin: 0 auto; }
@@ -592,7 +599,6 @@ input[type="text"]::placeholder { color: var(--faint); }
   color: var(--charcoal); margin-bottom: 40px;
 }
 
-/* Steps */
 .land-steps {
   display: flex; align-items: flex-start; gap: 16px; flex-wrap: wrap;
 }
@@ -605,21 +611,15 @@ input[type="text"]::placeholder { color: var(--faint); }
   font-family: var(--mono); font-size: 10px; color: var(--muted);
   letter-spacing: 2px; margin-bottom: 12px;
 }
-.land-step-icon {
-  font-size: 24px; color: var(--navy); margin-bottom: 12px;
-}
+.land-step-icon { font-size: 24px; color: var(--navy); margin-bottom: 12px; }
 .land-step-title {
   font-family: var(--headline); font-size: 18px; font-weight: 800;
   text-transform: uppercase; letter-spacing: 0.5px;
   color: var(--charcoal); margin-bottom: 8px;
 }
 .land-step-body { font-family: var(--body); font-size: 13px; color: var(--muted); line-height: 1.7; }
-.land-step-arrow {
-  font-size: 24px; color: var(--faint); padding-top: 48px;
-  flex-shrink: 0;
-}
+.land-step-arrow { font-size: 24px; color: var(--faint); padding-top: 48px; flex-shrink: 0; }
 
-/* Features */
 .land-features {
   display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 16px;
@@ -630,9 +630,7 @@ input[type="text"]::placeholder { color: var(--faint); }
   transition: border-color 0.15s;
 }
 .land-feature:hover { border-color: var(--navy); }
-.land-feature-icon {
-  font-size: 20px; margin-bottom: 12px;
-}
+.land-feature-icon { font-size: 20px; margin-bottom: 12px; }
 .land-feature-icon.navy { color: var(--navy); }
 .land-feature-icon.green { color: var(--green); }
 .land-feature-icon.crimson { color: var(--crimson); }
@@ -643,20 +641,11 @@ input[type="text"]::placeholder { color: var(--faint); }
 }
 .land-feature-body { font-family: var(--body); font-size: 13px; color: var(--muted); line-height: 1.7; }
 
-/* CTA Banner */
-.land-cta-banner {
-  padding: 80px 24px;
-  background: var(--charcoal);
-}
+.land-cta-banner { padding: 80px 24px; background: var(--charcoal); }
 .land-cta-banner .land-h2 { color: #E9E6DF; }
 .land-cta-banner .land-subhead { color: #6a7280; }
 
-/* Footer */
-.land-footer {
-  padding: 24px;
-  border-top: 1px solid var(--border);
-  background: var(--bg);
-}
+.land-footer { padding: 24px; border-top: 1px solid var(--border); background: var(--bg); }
 .land-footer-inner {
   max-width: 1000px; margin: 0 auto;
   display: flex; align-items: center; justify-content: space-between;
@@ -674,91 +663,6 @@ input[type="text"]::placeholder { color: var(--faint); }
 }
 .land-credit:hover { color: var(--navy); }
 
-@media (max-width: 600px) {
-  .land-h1 { font-size: 34px; }
-  .land-h2 { font-size: 26px; }
-  .land-step-arrow { display: none; }
-  .land-stat-divider { display: none; }
-  .land-footer-inner { flex-direction: column; align-items: flex-start; }
-}
-
-/* ─── Enhanced Mobile Responsiveness ─────────────────────────────────────── */
-
-/* App shell mobile */
-@media (max-width: 480px) {
-  .app { padding: 0 12px 40px; }
-
-  /* Header */
-  .header { padding: 14px 0 12px; }
-  .logo-text { font-size: 16px; }
-  .tagline { display: none; }
-  .btn { padding: 7px 12px; font-size: 12px; }
-  .btn-large { padding: 10px 20px; font-size: 13px; }
-
-  /* Status bar */
-  .statusbar { padding: 6px 10px; gap: 10px; font-size: 10px; }
-  .status-item:nth-child(2) { display: none; }
-
-  /* Connect prompt */
-  .connect-inner h2 { font-size: 22px; }
-  .connect-inner p { font-size: 13px; }
-
-  /* Tabs */
-  .tab { padding: 8px 14px; font-size: 12px; }
-
-  /* Cards */
-  .card { padding: 14px; }
-  .metric { padding: 10px; }
-  .metric-value { font-size: 20px; }
-
-  /* Transfer list */
-  .transfer-row { flex-wrap: wrap; gap: 6px; }
-  .transfer-to { font-size: 11px; }
-  .transfer-amount { font-size: 12px; }
-
-  /* Intelligence query bar */
-  .card > div[style*="display: flex"] {
-    flex-direction: column;
-  }
-
-  /* Alerts */
-  .alert { padding: 10px 12px; font-size: 12px; }
-}
-
-/* Tablet */
-@media (max-width: 768px) {
-
-
-  /* Landing hero */
-  .land-hero { padding: 48px 16px 40px; }
-  .land-h1 { font-size: 40px; }
-  .land-hero-ctas { flex-direction: column; align-items: center; }
-  .land-btn-primary, .land-btn-secondary { width: 100%; max-width: 280px; text-align: center; }
-
-  /* Landing nav */
-  .land-nav-links .land-nav-link { display: none; }
-
-  /* Landing features */
-  .land-features { grid-template-columns: 1fr 1fr; }
-
-  /* Landing steps */
-  .land-steps { flex-direction: column; }
-  .land-step-arrow { display: none; }
-  .land-step { min-width: unset; }
-
-  /* Stats */
-  .land-stat-row { gap: 16px; }
-  .land-stat-value { font-size: 24px; }
-}
-
-/* Large mobile landscape */
-@media (max-width: 640px) {
-  .land-features { grid-template-columns: 1fr; }
-  .land-h2 { font-size: 24px; }
-  .land-section { padding: 48px 16px; }
-  .land-cta-banner { padding: 48px 16px; }
-}
-
 /* ─── Skeleton Loading ────────────────────────────────────────────────────── */
 .skeleton {
   background: linear-gradient(90deg, var(--border) 25%, var(--border2) 50%, var(--border) 75%);
@@ -772,4 +676,53 @@ input[type="text"]::placeholder { color: var(--faint); }
 @keyframes shimmer {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
+}
+
+/* ─── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .land-hero { padding: 48px 16px 40px; }
+  .land-h1 { font-size: 40px; }
+  .land-hero-ctas { flex-direction: column; align-items: center; }
+  .land-btn-primary, .land-btn-secondary { width: 100%; max-width: 280px; text-align: center; }
+  .land-nav-links .land-nav-link { display: none; }
+  .land-features { grid-template-columns: 1fr 1fr; }
+  .land-steps { flex-direction: column; }
+  .land-step-arrow { display: none; }
+  .land-step { min-width: unset; }
+  .land-stat-row { gap: 16px; }
+  .land-stat-value { font-size: 24px; }
+}
+
+@media (max-width: 640px) {
+  .land-features { grid-template-columns: 1fr; }
+  .land-h2 { font-size: 24px; }
+  .land-section { padding: 48px 16px; }
+  .land-cta-banner { padding: 48px 16px; }
+  .land-stat-divider { display: none; }
+  .land-step-arrow { display: none; }
+  .land-footer-inner { flex-direction: column; align-items: flex-start; }
+}
+
+@media (max-width: 480px) {
+  .app { padding: 0 12px 40px; }
+  .header { padding: 14px 0 12px; }
+  .logo-text { font-size: 16px; }
+  .tagline { display: none; }
+  .btn { padding: 7px 12px; font-size: 12px; }
+  .btn-large { padding: 10px 20px; font-size: 13px; }
+  .statusbar { padding: 6px 10px; gap: 10px; font-size: 10px; }
+  .status-item:nth-child(2) { display: none; }
+  .connect-inner h2 { font-size: 22px; }
+  .connect-inner p { font-size: 13px; }
+  .tab { padding: 8px 14px; font-size: 12px; }
+  .card { padding: 14px; }
+  .metric { padding: 10px; }
+  .metric-value { font-size: 20px; }
+  .transfer-row { flex-wrap: wrap; gap: 6px; }
+  .transfer-to { font-size: 11px; }
+  .transfer-amount { font-size: 12px; }
+  .query-bar { flex-direction: column; }
+  .query-bar .btn { width: 100%; justify-content: center; }
+  .alert { padding: 10px 12px; font-size: 12px; }
+  .land-h1 { font-size: 28px; }
 }
