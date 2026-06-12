@@ -709,7 +709,6 @@ input[type="text"]::placeholder { color: var(--faint); }
 
   /* Cards */
   .card { padding: 14px; }
-  .card-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
   .metric { padding: 10px; }
   .metric-value { font-size: 20px; }
 
