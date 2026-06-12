@@ -4,6 +4,7 @@ import { useState, useCallback } from "react";
 import { useWriteContract } from "wagmi";
 import { REGISTRY_ADDRESS, REGISTRY_ABI } from "@/lib/celo";
 import { USDC_ADDRESS, USDC_ABI, QUERY_PRICE } from "@/lib/usdc";
+import { BalanceSkeleton, TransferSkeleton, AlertSkeleton } from "@/components/Skeleton";
 
 interface Transfer {
   to: string;
@@ -43,7 +44,6 @@ export function IntelligencePanel({ address, isMiniPay }: Props) {
     setData(null);
 
     try {
-      // Step 1: Approve USDC spend on registry contract
       setStep("approving");
       await writeContractAsync({
         address: USDC_ADDRESS,
@@ -52,7 +52,6 @@ export function IntelligencePanel({ address, isMiniPay }: Props) {
         args: [REGISTRY_ADDRESS, QUERY_PRICE],
       });
 
-      // Step 2: Call recordQuery on registry — pays USDC + emits event on our contract
       setStep("recording");
       const txHash = await writeContractAsync({
         address: REGISTRY_ADDRESS,
@@ -61,11 +60,9 @@ export function IntelligencePanel({ address, isMiniPay }: Props) {
         args: [queryAddress as `0x${string}`],
       });
 
-      // Step 3: Wait for confirmation
       setStep("confirming");
       await new Promise((res) => setTimeout(res, 3000));
 
-      // Step 4: Fetch intelligence with tx hash as proof
       setStep("fetching");
       const res = await fetch(`/api/intelligence?address=${queryAddress}`, {
         headers: { "X-PAYMENT": txHash },
@@ -127,6 +124,14 @@ export function IntelligencePanel({ address, isMiniPay }: Props) {
       </div>
 
       {error && <div className="error-text">{error}</div>}
+
+      {loading && step === "fetching" && (
+        <>
+          <AlertSkeleton />
+          <BalanceSkeleton />
+          <TransferSkeleton />
+        </>
+      )}
 
       {data && (
         <>

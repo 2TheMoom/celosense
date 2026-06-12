@@ -761,21 +761,17 @@ input[type="text"]::placeholder { color: var(--faint); }
   .land-cta-banner { padding: 48px 16px; }
 }
 
-/* Query bar */
-.query-bar {
-  display: flex;
-  gap: 10px;
+/* ─── Skeleton Loading ────────────────────────────────────────────────────── */
+.skeleton {
+  background: linear-gradient(90deg, var(--border) 25%, var(--border2) 50%, var(--border) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  display: block;
 }
+.mb-8 { margin-bottom: 8px; }
+.mb-4 { margin-bottom: 4px; }
 
-@media (max-width: 480px) {
-  .query-bar {
-    flex-direction: column;
-  }
-  .query-bar input {
-    width: 100%;
-  }
-  .query-bar .btn {
-    width: 100%;
-    justify-content: center;
-  }
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
