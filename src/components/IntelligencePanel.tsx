@@ -105,7 +105,7 @@ export function IntelligencePanel({ address, isMiniPay }: Props) {
     <div>
       <div className="card" style={{ marginBottom: 16 }}>
         <div className="card-title">Query Wallet Intelligence</div>
-        <div style={{ display: "flex", gap: 10 }}>
+        <div className="query-bar">
           <input
             type="text"
             value={queryAddress}

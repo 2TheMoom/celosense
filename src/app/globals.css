@@ -760,3 +760,22 @@ input[type="text"]::placeholder { color: var(--faint); }
   .land-section { padding: 48px 16px; }
   .land-cta-banner { padding: 48px 16px; }
 }
+
+/* Query bar */
+.query-bar {
+  display: flex;
+  gap: 10px;
+}
+
+@media (max-width: 480px) {
+  .query-bar {
+    flex-direction: column;
+  }
+  .query-bar input {
+    width: 100%;
+  }
+  .query-bar .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
