@@ -472,7 +472,6 @@ input[type="text"]::placeholder { color: var(--faint); }
 
 /* ─── Responsive ──────────────────────────────────────────────────────────── */
 @media (max-width: 600px) {
-  .card-grid { grid-template-columns: 1fr 1fr; }
   .statusbar { gap: 12px; }
   .tagline { display: none; }
   .logo-text { font-size: 18px; }
@@ -728,7 +727,7 @@ input[type="text"]::placeholder { color: var(--faint); }
 
 /* Tablet */
 @media (max-width: 768px) {
-  
+
 
   /* Landing hero */
   .land-hero { padding: 48px 16px 40px; }
