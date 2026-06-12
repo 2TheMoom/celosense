@@ -682,3 +682,81 @@ input[type="text"]::placeholder { color: var(--faint); }
   .land-stat-divider { display: none; }
   .land-footer-inner { flex-direction: column; align-items: flex-start; }
 }
+
+/* ─── Enhanced Mobile Responsiveness ─────────────────────────────────────── */
+
+/* App shell mobile */
+@media (max-width: 480px) {
+  .app { padding: 0 12px 40px; }
+
+  /* Header */
+  .header { padding: 14px 0 12px; }
+  .logo-text { font-size: 16px; }
+  .tagline { display: none; }
+  .btn { padding: 7px 12px; font-size: 12px; }
+  .btn-large { padding: 10px 20px; font-size: 13px; }
+
+  /* Status bar */
+  .statusbar { padding: 6px 10px; gap: 10px; font-size: 10px; }
+  .status-item:nth-child(2) { display: none; }
+
+  /* Connect prompt */
+  .connect-inner h2 { font-size: 22px; }
+  .connect-inner p { font-size: 13px; }
+
+  /* Tabs */
+  .tab { padding: 8px 14px; font-size: 12px; }
+
+  /* Cards */
+  .card { padding: 14px; }
+  .card-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .metric { padding: 10px; }
+  .metric-value { font-size: 20px; }
+
+  /* Transfer list */
+  .transfer-row { flex-wrap: wrap; gap: 6px; }
+  .transfer-to { font-size: 11px; }
+  .transfer-amount { font-size: 12px; }
+
+  /* Intelligence query bar */
+  .card > div[style*="display: flex"] {
+    flex-direction: column;
+  }
+
+  /* Alerts */
+  .alert { padding: 10px 12px; font-size: 12px; }
+}
+
+/* Tablet */
+@media (max-width: 768px) {
+  .card-grid { grid-template-columns: 1fr 1fr; }
+
+  /* Landing hero */
+  .land-hero { padding: 48px 16px 40px; }
+  .land-h1 { font-size: 40px; }
+  .land-hero-ctas { flex-direction: column; align-items: center; }
+  .land-btn-primary, .land-btn-secondary { width: 100%; max-width: 280px; text-align: center; }
+
+  /* Landing nav */
+  .land-nav-links .land-nav-link { display: none; }
+
+  /* Landing features */
+  .land-features { grid-template-columns: 1fr 1fr; }
+
+  /* Landing steps */
+  .land-steps { flex-direction: column; }
+  .land-step-arrow { display: none; }
+  .land-step { min-width: unset; }
+
+  /* Stats */
+  .land-stat-row { gap: 16px; }
+  .land-stat-value { font-size: 24px; }
+}
+
+/* Large mobile landscape */
+@media (max-width: 640px) {
+  .land-features { grid-template-columns: 1fr; }
+  .land-h2 { font-size: 24px; }
+  .land-section { padding: 48px 16px; }
+  .land-cta-banner { padding: 48px 16px; }
+}
