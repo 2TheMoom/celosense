@@ -728,7 +728,7 @@ input[type="text"]::placeholder { color: var(--faint); }
 
 /* Tablet */
 @media (max-width: 768px) {
-  .card-grid { grid-template-columns: 1fr 1fr; }
+  
 
   /* Landing hero */
   .land-hero { padding: 48px 16px 40px; }
