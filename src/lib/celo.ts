@@ -31,11 +31,6 @@ export const TOKENS = {
   USDm: "0x765DE816845861e75A25fCA122bb6898B8B1282a" as `0x${string}`,
 } as const;
 
-export const FEE_ADAPTERS = {
-  USDC: "0x2F25deB3848C207fc8E0c34035B3Ba7fC157602B" as `0x${string}`,
-  USDT: "0x0e2a3e05bc9a16f5292a6170456a710cb89c6f72" as `0x${string}`,
-} as const;
-
 export const REGISTRY_ADDRESS = (
   process.env.NEXT_PUBLIC_REGISTRY_ADDRESS || "0x0000000000000000000000000000000000000000"
 ) as `0x${string}`;
@@ -63,6 +58,17 @@ export const REGISTRY_ABI = [
     outputs: [],
   },
   {
+    name: "logDecision",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "decisionType", type: "string" },
+      { name: "target", type: "address" },
+      { name: "score", type: "uint256" },
+    ],
+    outputs: [],
+  },
+  {
     name: "getStatus",
     type: "function",
     stateMutability: "view",
@@ -81,6 +87,13 @@ export const REGISTRY_ABI = [
   },
   {
     name: "totalQueries",
+    type: "function",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+  {
+    name: "totalDecisions",
     type: "function",
     stateMutability: "view",
     inputs: [],
@@ -107,6 +120,17 @@ export const REGISTRY_ABI = [
     inputs: [
       { name: "querier", type: "address", indexed: true },
       { name: "target", type: "address", indexed: true },
+      { name: "timestamp", type: "uint256", indexed: false },
+    ],
+  },
+  {
+    name: "DecisionLogged",
+    type: "event",
+    inputs: [
+      { name: "agent", type: "address", indexed: true },
+      { name: "decisionType", type: "string", indexed: false },
+      { name: "target", type: "address", indexed: true },
+      { name: "score", type: "uint256", indexed: false },
       { name: "timestamp", type: "uint256", indexed: false },
     ],
   },

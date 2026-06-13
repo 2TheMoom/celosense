@@ -1,10 +1,9 @@
 import pkg from "hardhat";
 const { ethers, network } = pkg;
 
-// Celo mainnet USDC
 const USDC = "0xcebA9300f2b948710d2653dD7B07f33A8B32118C";
-// $0.01 USDC = 10000 raw units (6 decimals)
-const QUERY_PRICE = 10000n;
+const QUERY_PRICE = 10000n;       // $0.01 USDC
+const DECISION_PRICE = 100n;      // $0.0001 USDC
 
 async function main() {
   const signers = await ethers.getSigners();
@@ -12,10 +11,12 @@ async function main() {
 
   const [deployer] = signers;
   const feeRecipient = process.env.FEE_RECIPIENT || deployer.address;
+  const agentWallet = process.env.AGENT_WALLET || deployer.address;
 
   console.log("Network:", network.name);
   console.log("Deploying with:", deployer.address);
   console.log("Fee recipient:", feeRecipient);
+  console.log("Agent wallet:", agentWallet);
   console.log(
     "Balance:",
     ethers.formatEther(await ethers.provider.getBalance(deployer.address)),
@@ -23,13 +24,19 @@ async function main() {
   );
 
   const Registry = await ethers.getContractFactory("CeloSenseRegistry");
-  const registry = await Registry.deploy(USDC, feeRecipient, QUERY_PRICE);
+  const registry = await Registry.deploy(
+    USDC,
+    feeRecipient,
+    agentWallet,
+    QUERY_PRICE,
+    DECISION_PRICE
+  );
   await registry.waitForDeployment();
 
   const address = await registry.getAddress();
   console.log("\n✅ CeloSenseRegistry deployed to:", address);
   console.log("🔍 Verify:");
-  console.log(`   npx hardhat verify --network celo ${address} "${USDC}" "${feeRecipient}" "10000"`);
+  console.log(`   npx hardhat verify --network celo ${address} "${USDC}" "${feeRecipient}" "${agentWallet}" "10000" "100"`);
   console.log("\nAdd to .env.local:");
   console.log(`NEXT_PUBLIC_REGISTRY_ADDRESS=${address}`);
 }
