@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { publicClient, REGISTRY_ADDRESS } from "@/lib/celo";
 import { parseAbiItem } from "viem";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export async function GET() {
   try {
     const latestBlock = await publicClient.getBlockNumber();
@@ -26,7 +29,10 @@ export async function GET() {
       blockNumber: log.blockNumber?.toString(),
     })).reverse();
 
-    return NextResponse.json({ decisions, total: decisions.length });
+    return NextResponse.json(
+      { decisions, total: decisions.length },
+      { headers: { "Cache-Control": "no-store, max-age=0" } }
+    );
   } catch (err: any) {
     console.error("Decisions fetch error:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });

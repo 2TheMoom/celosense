@@ -24,6 +24,9 @@ const USDC_ABI = [
   },
 ] as const;
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 function verifyCron(request: NextRequest): boolean {
   const auth = request.headers.get("authorization");
   return auth === `Bearer ${process.env.CRON_SECRET}`;
