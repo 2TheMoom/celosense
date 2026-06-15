@@ -15,6 +15,13 @@ const USDC_ABI = [
     inputs: [{ name: "spender", type: "address" }, { name: "amount", type: "uint256" }],
     outputs: [{ name: "", type: "bool" }],
   },
+  {
+    name: "allowance",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "owner", type: "address" }, { name: "spender", type: "address" }],
+    outputs: [{ name: "", type: "uint256" }],
+  },
 ] as const;
 
 function verifyCron(request: NextRequest): boolean {
@@ -74,18 +81,46 @@ async function runAgent() {
     transport: http("https://forno.celo.org"),
   });
 
-  await walletClient.writeContract({
+  // Get current gas price and bump it to avoid "replacement underpriced"
+  const currentGasPrice = await publicClient.getGasPrice();
+  const bumpedGasPrice = (currentGasPrice * 150n) / 100n; // +50%
+
+  // Get pending nonce (includes any stuck pending txs)
+  const nonce = await publicClient.getTransactionCount({
+    address: account.address,
+    blockTag: "pending",
+  });
+
+  // Check current allowance — skip approve if already sufficient
+  const allowance = await publicClient.readContract({
     address: USDC_ADDRESS,
     abi: USDC_ABI,
-    functionName: "approve",
-    args: [REGISTRY_ADDRESS, DECISION_PRICE],
-  });
+    functionName: "allowance",
+    args: [account.address, REGISTRY_ADDRESS],
+  }) as bigint;
+
+  let currentNonce = nonce;
+
+  if (allowance < DECISION_PRICE * 1000n) {
+    // Approve a large amount to avoid repeated approvals
+    await walletClient.writeContract({
+      address: USDC_ADDRESS,
+      abi: USDC_ABI,
+      functionName: "approve",
+      args: [REGISTRY_ADDRESS, DECISION_PRICE * 1000000n],
+      gasPrice: bumpedGasPrice,
+      nonce: currentNonce,
+    });
+    currentNonce++;
+  }
 
   const txHash = await walletClient.writeContract({
     address: REGISTRY_ADDRESS,
     abi: REGISTRY_ABI,
     functionName: "logDecision",
     args: [decisionType, target as `0x${string}`, BigInt(score)],
+    gasPrice: bumpedGasPrice,
+    nonce: currentNonce,
   });
 
   return {
