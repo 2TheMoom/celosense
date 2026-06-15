@@ -131,7 +131,15 @@ export function AgentPanel() {
                     </div>
                     {d.target && d.target !== "0x0000000000000000000000000000000000000000" && (
                       <div style={{ fontFamily: "var(--mono)", fontSize: 10, color: "var(--muted)", marginTop: 2 }}>
-                        Target: {d.target.slice(0, 8)}…{d.target.slice(-4)}
+                        Target:{" "}
+                        <a
+                          href={`https://celoscan.io/address/${d.target}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ color: "var(--navy)", textDecoration: "none" }}
+                        >
+                          {d.target.slice(0, 8)}…{d.target.slice(-4)} ↗
+                        </a>
                       </div>
                     )}
                   </div>
