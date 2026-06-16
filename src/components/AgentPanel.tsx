@@ -9,6 +9,7 @@ interface Decision {
   score: string;
   timestamp: string;
   txHash: string;
+  transferTxHash: string | null;
   blockNumber: string;
 }
 
@@ -32,6 +33,7 @@ export function AgentPanel() {
   const [decisions, setDecisions] = useState<Decision[]>([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
+  const [visibleCount, setVisibleCount] = useState(20);
 
   const fetchDecisions = async () => {
     setLoading(true);
@@ -88,7 +90,7 @@ export function AgentPanel() {
           <div className="empty-text">No decisions logged yet. Agent will run shortly.</div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {decisions.slice(0, 20).map((d, i) => {
+            {decisions.slice(0, visibleCount).map((d, i) => {
               const color = DECISION_COLORS[d.decisionType] || "";
               const icon = DECISION_ICONS[d.decisionType] || "◈";
               const date = d.timestamp
@@ -133,12 +135,17 @@ export function AgentPanel() {
                       <div style={{ fontFamily: "var(--mono)", fontSize: 10, color: "var(--muted)", marginTop: 2 }}>
                         Target:{" "}
                         <a
-                          href={`https://celoscan.io/address/${d.target}`}
+                          href={
+                            d.transferTxHash
+                              ? `https://celoscan.io/tx/${d.transferTxHash}`
+                              : `https://celoscan.io/address/${d.target}`
+                          }
                           target="_blank"
                           rel="noopener noreferrer"
                           style={{ color: "var(--navy)", textDecoration: "none" }}
                         >
-                          {d.target.slice(0, 8)}…{d.target.slice(-4)} ↗
+                          {d.target.slice(0, 8)}…{d.target.slice(-4)}
+                          {d.transferTxHash ? " (view transfer) ↗" : " ↗"}
                         </a>
                       </div>
                     )}
@@ -170,10 +177,20 @@ export function AgentPanel() {
             })}
           </div>
         )}
+
+        {!loading && decisions.length > visibleCount && (
+          <button
+            className="btn btn-secondary"
+            onClick={() => setVisibleCount((v) => v + 20)}
+            style={{ width: "100%", justifyContent: "center", marginTop: 12 }}
+          >
+            Load more ({decisions.length - visibleCount} remaining)
+          </button>
+        )}
       </div>
 
       <div style={{ marginTop: 12, fontSize: 11, color: "var(--faint)", fontFamily: "var(--mono)", textAlign: "right" }}>
-        Showing last 20 decisions · Agent wallet: 0x1074…E3EE
+        Showing {Math.min(visibleCount, decisions.length)} of {decisions.length} decisions (last ~28h) · Agent wallet: 0x1074…E3EE
       </div>
     </div>
   );
