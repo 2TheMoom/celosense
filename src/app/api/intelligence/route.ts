@@ -32,11 +32,26 @@ async function verifyX402Payment(request: NextRequest): Promise<boolean> {
   }
 }
 
+// ─── CELO/USD price fetch ─────────────────────────────────────────────────────
+async function fetchCeloPrice(): Promise<number | null> {
+  try {
+    const res = await fetch(
+      "https://api.coingecko.com/api/v3/simple/price?ids=celo&vs_currencies=usd",
+      { cache: "no-store" }
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data?.celo?.usd ?? null;
+  } catch {
+    return null;
+  }
+}
+
 // ─── On-chain intelligence fetcher ───────────────────────────────────────────
 async function analyzeWallet(address: `0x${string}`) {
   address = getAddress(address);
 
-  const [celoBalance, usdcBalance, usdtBalance, latestBlock] = await Promise.all([
+  const [celoBalance, usdcBalance, usdtBalance, latestBlock, celoPrice] = await Promise.all([
     publicClient.getBalance({ address }),
     publicClient.readContract({
       address: TOKENS.USDC,
@@ -51,6 +66,7 @@ async function analyzeWallet(address: `0x${string}`) {
       args: [address],
     }),
     publicClient.getBlockNumber(),
+    fetchCeloPrice(),
   ]);
 
   const fromBlock = latestBlock - 500n;
@@ -77,6 +93,9 @@ async function analyzeWallet(address: `0x${string}`) {
     recentTransfers.length * 10 + (usdcFloat > 1000 ? 20 : 0) + (whaleActivity.length > 0 ? 30 : 0)
   );
 
+  const celoFloat = parseFloat(formatUnits(celoBalance, 18));
+  const celoUsdValue = celoPrice !== null ? celoFloat * celoPrice : null;
+
   return {
     address,
     balances: {
@@ -84,6 +103,8 @@ async function analyzeWallet(address: `0x${string}`) {
       usdc: formatUnits(usdcBalance as bigint, 6),
       usdt: formatUnits(usdtBalance as bigint, 6),
     },
+    celoPrice,
+    celoUsdValue,
     recentTransfers,
     whaleActivity,
     activityScore,

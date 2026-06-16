@@ -4,7 +4,6 @@ import { useState, useCallback } from "react";
 import { useWriteContract } from "wagmi";
 import { REGISTRY_ADDRESS, REGISTRY_ABI } from "@/lib/celo";
 import { USDC_ADDRESS, USDC_ABI, QUERY_PRICE } from "@/lib/usdc";
-import { BalanceSkeleton, TransferSkeleton, AlertSkeleton } from "@/components/Skeleton";
 
 interface Transfer {
   to: string;
@@ -16,6 +15,8 @@ interface Transfer {
 interface IntelligenceData {
   address: string;
   balances: { celo: string; usdc: string; usdt: string };
+  celoPrice: number | null;
+  celoUsdValue: number | null;
   recentTransfers: Transfer[];
   whaleActivity: Transfer[];
   activityScore: number;
@@ -44,6 +45,7 @@ export function IntelligencePanel({ address, isMiniPay }: Props) {
     setData(null);
 
     try {
+      // Step 1: Approve USDC spend on registry contract
       setStep("approving");
       await writeContractAsync({
         address: USDC_ADDRESS,
@@ -52,6 +54,7 @@ export function IntelligencePanel({ address, isMiniPay }: Props) {
         args: [REGISTRY_ADDRESS, QUERY_PRICE],
       });
 
+      // Step 2: Call recordQuery on registry — pays USDC + emits event on our contract
       setStep("recording");
       const txHash = await writeContractAsync({
         address: REGISTRY_ADDRESS,
@@ -60,9 +63,11 @@ export function IntelligencePanel({ address, isMiniPay }: Props) {
         args: [queryAddress as `0x${string}`],
       });
 
+      // Step 3: Wait for confirmation
       setStep("confirming");
       await new Promise((res) => setTimeout(res, 3000));
 
+      // Step 4: Fetch intelligence with tx hash as proof
       setStep("fetching");
       const res = await fetch(`/api/intelligence?address=${queryAddress}`, {
         headers: { "X-PAYMENT": txHash },
@@ -102,7 +107,7 @@ export function IntelligencePanel({ address, isMiniPay }: Props) {
     <div>
       <div className="card" style={{ marginBottom: 16 }}>
         <div className="card-title">Query Wallet Intelligence</div>
-        <div className="query-bar">
+        <div style={{ display: "flex", gap: 10 }}>
           <input
             type="text"
             value={queryAddress}
@@ -124,14 +129,6 @@ export function IntelligencePanel({ address, isMiniPay }: Props) {
       </div>
 
       {error && <div className="error-text">{error}</div>}
-
-      {loading && step === "fetching" && (
-        <>
-          <AlertSkeleton />
-          <BalanceSkeleton />
-          <TransferSkeleton />
-        </>
-      )}
 
       {data && (
         <>
@@ -160,7 +157,11 @@ export function IntelligencePanel({ address, isMiniPay }: Props) {
               <div className="metric">
                 <div className="metric-label">CELO</div>
                 <div className="metric-value green">{parseFloat(data.balances.celo).toFixed(4)}</div>
-                <div className="metric-sub">native</div>
+                <div className="metric-sub">
+                  {data.celoUsdValue !== null
+                    ? `≈ $${data.celoUsdValue.toFixed(2)} USD`
+                    : "native"}
+                </div>
               </div>
               <div className="metric">
                 <div className="metric-label">USDC</div>
