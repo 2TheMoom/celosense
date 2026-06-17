@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { publicClient, TOKENS, REGISTRY_ADDRESS, REGISTRY_ABI } from "@/lib/celo";
-import { createWalletClient, http, formatUnits, parseAbiItem, parseUnits } from "viem";
+import { createWalletClient, http, fallback, formatUnits, parseAbiItem, parseUnits } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { celo } from "viem/chains";
 
@@ -72,16 +72,36 @@ async function runAgent() {
     score = 20;
   }
 
+  // Defensive extraction: prefer decoded args.from, but fall back to decoding
+  // the indexed "from" address directly from topics[1] if args is incomplete.
+  // This guards against partial log decoding under RPC load.
+  function extractFromAddress(log: any): string {
+    if (log.args?.from) return log.args.from;
+    const topic = log.topics?.[1];
+    if (topic && topic.length === 66) {
+      return "0x" + topic.slice(26);
+    }
+    return "0x0000000000000000000000000000000000000000";
+  }
+
   const target = whaleTxs.length > 0
-    ? (whaleTxs[0] as any).args?.from ?? "0x0000000000000000000000000000000000000000"
+    ? extractFromAddress(whaleTxs[0])
     : "0x0000000000000000000000000000000000000000";
+
+  if (whaleTxs.length > 0 && target === "0x0000000000000000000000000000000000000000") {
+    console.warn("Whale detected but target extraction failed. Raw log:", JSON.stringify(whaleTxs[0]));
+  }
 
   if (!process.env.AGENT_PRIVATE_KEY) throw new Error("AGENT_PRIVATE_KEY not set");
   const account = privateKeyToAccount(process.env.AGENT_PRIVATE_KEY as `0x${string}`);
   const walletClient = createWalletClient({
     account,
     chain: celo,
-    transport: http("https://forno.celo.org"),
+    transport: fallback([
+      http("https://forno.celo.org", { timeout: 20_000 }),
+      http("https://celo-mainnet.g.alchemy.com/v2/demo", { timeout: 20_000 }),
+      http("https://1rpc.io/celo", { timeout: 20_000 }),
+    ]),
   });
 
   // Get current gas price and bump it to avoid "replacement underpriced"

@@ -1,10 +1,18 @@
-import { createPublicClient, createWalletClient, http, custom } from "viem";
+import { createPublicClient, createWalletClient, http, custom, fallback } from "viem";
 import { celo } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
 
+// Multiple RPC endpoints with fallback — forno.celo.org alone times out under
+// load on wide eth_getLogs queries, so we fall back to a second provider.
+const rpcTransport = fallback([
+  http("https://forno.celo.org", { timeout: 20_000 }),
+  http("https://celo-mainnet.g.alchemy.com/v2/demo", { timeout: 20_000 }),
+  http("https://1rpc.io/celo", { timeout: 20_000 }),
+]);
+
 export const publicClient = createPublicClient({
   chain: celo,
-  transport: http("https://forno.celo.org"),
+  transport: rpcTransport,
 });
 
 export function getAgentWalletClient() {
@@ -13,7 +21,7 @@ export function getAgentWalletClient() {
   return createWalletClient({
     account,
     chain: celo,
-    transport: http("https://forno.celo.org"),
+    transport: rpcTransport,
   });
 }
 
