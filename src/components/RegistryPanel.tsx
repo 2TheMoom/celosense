@@ -12,6 +12,7 @@ interface RegistryStatus {
   isRegistered: boolean;
   registeredAt: string | null;
   totalRegistered: string;
+  queryCount: string;
 }
 
 export function RegistryPanel({ address }: Props) {
@@ -89,6 +90,28 @@ export function RegistryPanel({ address }: Props) {
               <div className="metric-label" style={{ marginBottom: 4 }}>Total Registered Wallets</div>
               <div className="metric-value green">{status.totalRegistered}</div>
             </div>
+
+            {status.isRegistered && status.registeredAt && (
+              <div className="card-grid" style={{ marginBottom: 20 }}>
+                <div className="metric">
+                  <div className="metric-label">Days Registered</div>
+                  <div className="metric-value navy">
+                    {Math.max(
+                      0,
+                      Math.floor(
+                        (Date.now() - new Date(status.registeredAt).getTime()) / (1000 * 60 * 60 * 24)
+                      )
+                    )}
+                  </div>
+                  <div className="metric-sub">since {new Date(status.registeredAt).toLocaleDateString()}</div>
+                </div>
+                <div className="metric">
+                  <div className="metric-label">Your Queries</div>
+                  <div className="metric-value">{status.queryCount}</div>
+                  <div className="metric-sub">paid on-chain</div>
+                </div>
+              </div>
+            )}
 
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
               {!status.isRegistered ? (

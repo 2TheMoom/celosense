@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { publicClient, REGISTRY_ADDRESS, REGISTRY_ABI } from "@/lib/celo";
 
+// ─── GET: check registration status ──────────────────────────────────────────
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const address = searchParams.get("address") as `0x${string}` | null;
@@ -23,11 +24,19 @@ export async function GET(request: NextRequest) {
       functionName: "totalRegistered",
     })) as bigint;
 
+    const queryCount = (await publicClient.readContract({
+      address: REGISTRY_ADDRESS,
+      abi: REGISTRY_ABI,
+      functionName: "queryCount",
+      args: [address],
+    })) as bigint;
+
     return NextResponse.json({
       address,
       isRegistered,
       registeredAt: isRegistered ? new Date(Number(timestamp) * 1000).toISOString() : null,
       totalRegistered: totalRegistered.toString(),
+      queryCount: queryCount.toString(),
     });
   } catch (err) {
     console.error("Registry check error:", err);
