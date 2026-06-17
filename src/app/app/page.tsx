@@ -6,12 +6,13 @@ import { WalletConnect } from "@/components/WalletConnect";
 import { IntelligencePanel } from "@/components/IntelligencePanel";
 import { RegistryPanel } from "@/components/RegistryPanel";
 import { AgentPanel } from "@/components/AgentPanel";
+import { LeaderboardPanel } from "@/components/LeaderboardPanel";
 import { Logo } from "@/components/Logo";
 
 export default function Home() {
   const [mounted, setMounted] = useState(false);
   const { isMiniPay, isDetecting, address, isConnected } = useMiniPay();
-  const [activeTab, setActiveTab] = useState<"intelligence" | "registry" | "agent">("intelligence");
+  const [activeTab, setActiveTab] = useState<"intelligence" | "registry" | "agent" | "leaderboard">("intelligence");
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -93,6 +94,12 @@ export default function Home() {
             >
               <span className="tab-icon">⚙</span> Agent
             </button>
+            <button
+              className={`tab ${activeTab === "leaderboard" ? "active" : ""}`}
+              onClick={() => setActiveTab("leaderboard")}
+            >
+              <span className="tab-icon">🐋</span> Leaderboard
+            </button>
           </div>
           <div className="content">
             {activeTab === "intelligence" && (
@@ -103,6 +110,9 @@ export default function Home() {
             )}
             {activeTab === "agent" && (
               <AgentPanel />
+            )}
+            {activeTab === "leaderboard" && (
+              <LeaderboardPanel />
             )}
           </div>
         </>
