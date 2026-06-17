@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { publicClient, TOKENS, REGISTRY_ADDRESS, REGISTRY_ABI } from "@/lib/celo";
-import { createWalletClient, http, fallback, formatUnits, parseAbiItem, parseUnits } from "viem";
+import { createWalletClient, http, formatUnits, parseAbiItem, parseUnits } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { celo } from "viem/chains";
 
@@ -97,11 +97,11 @@ async function runAgent() {
   const walletClient = createWalletClient({
     account,
     chain: celo,
-    transport: fallback([
-      http("https://forno.celo.org", { timeout: 20_000 }),
-      http("https://celo-mainnet.g.alchemy.com/v2/demo", { timeout: 20_000 }),
-      http("https://1rpc.io/celo", { timeout: 20_000 }),
-    ]),
+    transport: http("https://forno.celo.org", {
+      timeout: 30_000,
+      retryCount: 3,
+      retryDelay: 1_000,
+    }),
   });
 
   // Get current gas price and bump it to avoid "replacement underpriced"

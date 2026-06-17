@@ -1,14 +1,16 @@
-import { createPublicClient, createWalletClient, http, custom, fallback } from "viem";
+import { createPublicClient, createWalletClient, http, custom } from "viem";
 import { celo } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
 
-// Multiple RPC endpoints with fallback — forno.celo.org alone times out under
-// load on wide eth_getLogs queries, so we fall back to a second provider.
-const rpcTransport = fallback([
-  http("https://forno.celo.org", { timeout: 20_000 }),
-  http("https://celo-mainnet.g.alchemy.com/v2/demo", { timeout: 20_000 }),
-  http("https://1rpc.io/celo", { timeout: 20_000 }),
-]);
+// forno.celo.org is the official Celo RPC and supports wide eth_getLogs ranges,
+// unlike most free third-party RPCs which cap block ranges (e.g. 1rpc.io caps at 50).
+// We give it a generous timeout and retry budget instead of falling back to
+// providers with incompatible limits.
+const rpcTransport = http("https://forno.celo.org", {
+  timeout: 30_000,
+  retryCount: 3,
+  retryDelay: 1_000,
+});
 
 export const publicClient = createPublicClient({
   chain: celo,
