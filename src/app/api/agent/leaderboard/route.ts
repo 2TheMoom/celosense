@@ -19,7 +19,7 @@ interface WhaleEntry {
 export async function GET() {
   try {
     const latestBlock = await publicClient.getBlockNumber();
-    const fromBlock = latestBlock > 5000n ? latestBlock - 5000n : 0n;
+    const fromBlock = latestBlock > 1500n ? latestBlock - 1500n : 0n;
 
     const logs = await publicClient.getLogs({
       address: REGISTRY_ADDRESS,
