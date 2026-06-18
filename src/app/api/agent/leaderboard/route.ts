@@ -7,6 +7,7 @@ export const revalidate = 0;
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 const WHALE_TYPES = new Set(["WHALE_DETECTED", "HIGH_WHALE_ACTIVITY"]);
+const CHUNK_SIZE = 400n; // safely under every fallback RPC's observed range limit
 
 interface WhaleEntry {
   address: string;
@@ -16,12 +17,43 @@ interface WhaleEntry {
   lastTxHash: string;
 }
 
+// Splits a wide block range into small chunks and queries each sequentially,
+// merging results. Avoids "block range too large" errors across providers
+// with different, undocumented, or inconsistent eth_getLogs limits.
+async function getLogsChunked(params: {
+  address: `0x${string}`;
+  event: any;
+  fromBlock: bigint;
+  toBlock: bigint;
+}) {
+  const allLogs: any[] = [];
+  let start = params.fromBlock;
+
+  while (start <= params.toBlock) {
+    const end = start + CHUNK_SIZE - 1n > params.toBlock ? params.toBlock : start + CHUNK_SIZE - 1n;
+    try {
+      const chunkLogs = await publicClient.getLogs({
+        address: params.address,
+        event: params.event,
+        fromBlock: start,
+        toBlock: end,
+      });
+      allLogs.push(...chunkLogs);
+    } catch (err) {
+      console.error(`Chunk ${start}-${end} failed:`, err);
+    }
+    start = end + 1n;
+  }
+
+  return allLogs;
+}
+
 export async function GET() {
   try {
     const latestBlock = await publicClient.getBlockNumber();
     const fromBlock = latestBlock > 1500n ? latestBlock - 1500n : 0n;
 
-    const logs = await publicClient.getLogs({
+    const logs = await getLogsChunked({
       address: REGISTRY_ADDRESS,
       event: parseAbiItem(
         "event DecisionLogged(address indexed agent, string decisionType, address indexed target, uint256 score, uint256 timestamp)"
