@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
-const CHUNK_SIZE = 400n; // safely under every fallback RPC's observed range limit
+const CHUNK_SIZE = 800n; // safely under every fallback RPC's observed range limit
 
 // In-memory cache, keyed by the decision's own txHash (immutable once mined).
 // Survives across requests within the same warm serverless instance, avoiding
@@ -81,7 +81,7 @@ async function findTransferTxHash(
 export async function GET() {
   try {
     const latestBlock = await publicClient.getBlockNumber();
-    const fromBlock = latestBlock > 1500n ? latestBlock - 1500n : 0n;
+    const fromBlock = latestBlock > 10000n ? latestBlock - 10000n : 0n;
 
     const logs = await getLogsChunked({
       address: REGISTRY_ADDRESS,

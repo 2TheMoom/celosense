@@ -7,7 +7,7 @@ export const revalidate = 0;
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 const WHALE_TYPES = new Set(["WHALE_DETECTED", "HIGH_WHALE_ACTIVITY"]);
-const CHUNK_SIZE = 400n; // safely under every fallback RPC's observed range limit
+const CHUNK_SIZE = 800n; // safely under every fallback RPC's observed range limit
 
 interface WhaleEntry {
   address: string;
@@ -51,7 +51,7 @@ async function getLogsChunked(params: {
 export async function GET() {
   try {
     const latestBlock = await publicClient.getBlockNumber();
-    const fromBlock = latestBlock > 1500n ? latestBlock - 1500n : 0n;
+    const fromBlock = latestBlock > 10000n ? latestBlock - 10000n : 0n;
 
     const logs = await getLogsChunked({
       address: REGISTRY_ADDRESS,
