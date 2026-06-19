@@ -1,79 +1,135 @@
 # CeloSense
 
 > Autonomous on-chain intelligence agent for the Celo ecosystem.
-> Built for Celo Proof of Ship — June 2026.
+> Built for Celo Proof of Ship & Celo Onchain Agents Hackathon — June 2026.
 
-CeloSense monitors wallet activity on Celo mainnet, flags whale movements, and delivers pay-per-query insights inside MiniPay via x402 micropayments. Every query is recorded on-chain through the CeloSenseRegistry contract.
+CeloSense monitors Celo mainnet every 5 minutes, detects whale movements, scores wallet activity, and logs every decision permanently on-chain via the CeloSenseRegistry contract. Pay-per-query intelligence ($0.01 USDC) delivered inside MiniPay via x402 micropayments.
 
 **Live:** [celosense.vercel.app](https://celosense.vercel.app)
-**Contract:** [CeloSenseRegistry on Celoscan](https://celoscan.io/address/0xda0f76E12d9571f3fc62D3C65CFF1662E4235046#code)
-**Builder:** [@olumi441](https://x.com/olumi441)
+**Contract:** [CeloSenseRegistry on Celoscan](https://celoscan.io/address/0x8a30F753942458897619A83D6467B0FF62DE7Abd#code)
+**ERC-8004 Agent:** [8004scan.io/agents/celo/9228](https://8004scan.io/agents/celo/9228)
+**Builder:** [Abu Olumi](https://x.com/olumi441)
 
 ---
 
 ## What it does
 
-- Detects MiniPay wallet and auto-connects — no connect button inside MiniPay
-- Analyzes any Celo wallet: balances, recent USDC transfers, whale flags, activity score
-- Pay-per-query API gated by on-chain payment — $0.01 USDC per query via `recordQuery()`
-- Every query is recorded on-chain to the CeloSenseRegistry contract
-- On-chain registry for wallet opt-in monitoring — permanent, verifiable credential
-- Agent backend polls Celo mainnet via viem, no centralized database
+### Intelligence Tab
+- Analyzes any Celo wallet — CELO/USDC/USDT balances with live CELO/USD price
+- Scans last 1,000 blocks for USDC transfers, flags whale activity (>$10,000)
+- Computes activity score 0–100 based on transfer volume and frequency
+- Pay-per-query API gated by on-chain USDC payment — $0.01 via `recordQuery()`
+
+### Registry Tab
+- On-chain wallet registration — permanent, verifiable credential on Celo mainnet
+- Shows personal stats: days registered and total queries paid on-chain
+- Tracks total registered wallets across the ecosystem
+
+### Agent Tab
+- Autonomous agent runs every 5 minutes via cron, funded by a dedicated agent wallet
+- Classifies each run: `HIGH_WHALE_ACTIVITY` / `WHALE_DETECTED` / `HIGH_VOLUME` / `NORMAL` / `QUIET_PERIOD`
+- Logs every decision on-chain via `logDecision()` — $0.0001 USDC per decision
+- Every entry links directly to the specific transfer transaction on Celoscan
+
+### Leaderboard Tab
+- Ranks wallets most frequently flagged for whale activity
+- Built entirely from on-chain `DecisionLogged` events — no database
+- Medal ranking for top 3 flagged wallets with direct Celoscan links
 
 ---
 
-## How it works
+## Architecture
 
 ```
+cron-job.org (every 5 min)
+        ↓
+  /api/agent/run
+        ↓
+  Scan 500 blocks → classify → logDecision() → CeloSenseRegistry
+        ↓
+  DecisionLogged event emitted on Celo mainnet
+
+
 MiniPay / Browser Wallet
         ↓
-  CeloSense App (Next.js · wagmi · viem)
+  CeloSense App (Next.js 14 · wagmi v2 · viem v2)
         ↓
-  Approve USDC → recordQuery() on CeloSenseRegistry
+  Approve USDC → recordQuery(target) → CeloSenseRegistry
         ↓
-  Intelligence Agent          CeloSenseRegistry
-  Balances · whale flags      Solidity · verified
-        ↓                            ↓
-         Celo Mainnet · Chain ID 42220
+  Intelligence Agent (viem publicClient)
+  Balances · Transfers · Whale flags · Activity score
 ```
 
-1. **Connect** — wallet connects via MiniPay (auto) or browser (MetaMask)
-2. **Approve** — user approves $0.01 USDC spend on the registry contract
-3. **Record** — `recordQuery()` collects payment, emits `QueryRecorded` event on-chain
-4. **Analyze** — backend fetches balances, scans 500 blocks for USDC transfers, flags whales
-5. **Register** — users can call `register()` to create a permanent on-chain monitoring credential
+---
+
+## Contracts
+
+### CeloSenseRegistry (v3 — current)
+
+| | |
+|---|---|
+| **Address** | `0x8a30F753942458897619A83D6467B0FF62DE7Abd` |
+| **Network** | Celo Mainnet (Chain ID 42220) |
+| **Verification** | [Source Verified on Celoscan](https://celoscan.io/address/0x8a30F753942458897619A83D6467B0FF62DE7Abd#code) |
+| **Query Price** | 10000 raw = $0.01 USDC |
+| **Decision Price** | 100 raw = $0.0001 USDC |
+
+### Key functions
+
+```solidity
+register()                              // Opt wallet into monitoring
+deregister()                            // Opt out
+recordQuery(address target)             // Pay $0.01 USDC + emit QueryRecorded
+logDecision(string type, address target, uint256 score)  // Agent only — $0.0001 USDC
+getStatus(address wallet)               // Check registration + timestamp
+totalRegistered                         // Live registered wallet count
+totalQueries                            // All-time query count
+totalDecisions                          // All-time agent decision count
+```
+
+### ERC-8004 Identity
+
+CeloSense is registered on the ERC-8004 Identity Registry on Celo mainnet:
+
+| | |
+|---|---|
+| **Agent ID** | 9228 |
+| **Registry** | `0x8004A169FB4a3325136EB29fA0ceB6D2e539a432` |
+| **Profile** | [8004scan.io/agents/celo/9228](https://8004scan.io/agents/celo/9228) |
+| **Agent Wallet** | `0x10745fcCbCF1e12C215a81791af66da7f451E3EE` |
 
 ---
 
 ## Stack
 
-- **Frontend**: Next.js 14, wagmi v2, viem v2, thirdweb v5
-- **Contract**: Solidity 0.8.20, Hardhat
-- **Chain**: Celo Mainnet (chainId 42220)
-- **RPC**: forno.celo.org (public, no API key)
-- **Payments**: on-chain USDC via CeloSenseRegistry.recordQuery()
+| Layer | Technology |
+|-------|-----------|
+| Frontend | Next.js 14, React 18, TypeScript |
+| Wallet | wagmi v2, viem v2 |
+| Payments | x402 protocol, on-chain USDC |
+| Contract | Solidity 0.8.20, Hardhat |
+| Chain | Celo Mainnet (Chain ID 42220) |
+| RPC | forno.celo.org + rpc.ankr.com/celo (fallback) |
+| Cron | cron-job.org (every 5 min) + Vercel daily backup |
+| Deployment | Vercel |
 
 ---
 
-## Contract
+## Tests
 
-| | |
-|---|---|
-| **Address** | `0xda0f76E12d9571f3fc62D3C65CFF1662E4235046` |
-| **Network** | Celo Mainnet (42220) |
-| **Verification** | Source Code Verified — Exact Match |
-| **Query Price** | 10000 (raw) = $0.01 USDC |
-| **Fee Recipient** | Configurable via `setFeeRecipient()` |
+24 Hardhat tests covering all contract functions:
 
-### Key functions
+```bash
+npx hardhat test
+```
 
-```solidity
-register()                    // Opt wallet into monitoring
-deregister()                  // Opt out
-recordQuery(address target)   // Pay $0.01 USDC + emit QueryRecorded event
-getStatus(address wallet)     // Check registration status
-totalRegistered               // Total registered wallets
-totalQueries                  // Total queries recorded on-chain
+```
+CeloSenseRegistry - register()      5 tests
+CeloSenseRegistry - deregister()    5 tests
+CeloSenseRegistry - recordQuery()   6 tests
+CeloSenseRegistry - logDecision()   8 tests
+
+24 passing
 ```
 
 ---
@@ -86,7 +142,26 @@ cd celosense
 npm install
 cp .env.example .env.local
 # Fill in your keys
+npm run dev
+# App at http://localhost:3000/landing
 ```
+
+---
+
+## Environment variables
+
+```bash
+DEPLOYER_PRIVATE_KEY=           # Deployer wallet private key
+NEXT_PUBLIC_REGISTRY_ADDRESS=   # Deployed contract address
+AGENT_PRIVATE_KEY=              # Agent wallet private key (NOT your personal wallet)
+AGENT_WALLET=                   # Agent wallet public address
+FEE_RECIPIENT=                  # Wallet that receives query and decision fees
+NEXT_PUBLIC_FEE_RECIPIENT=      # Same as above (client-side)
+CRON_SECRET=                    # Bearer token for /api/agent/run endpoint
+CELOSCAN_API_KEY=               # For contract verification
+```
+
+> ⚠️ **AGENT_PRIVATE_KEY** must be the private key for the dedicated agent wallet, not your personal wallet. The `logDecision()` function uses an `onlyAgent` modifier — calls from any other wallet will revert.
 
 ---
 
@@ -97,47 +172,34 @@ cp .env.example .env.local
 npm run deploy:mainnet
 
 # Verify on Celoscan
-npx hardhat verify --network celo <ADDRESS> "<USDC>" "<FEE_RECIPIENT>" "10000"
+npx hardhat verify --network celo <ADDRESS> \
+  "<USDC>" "<FEE_RECIPIENT>" "<AGENT_WALLET>" "10000" "100"
 ```
 
 ---
 
-## Run locally
+## MiniPay integration
 
-```bash
-npm run dev
-# App at http://localhost:3000/landing
-# Test inside MiniPay via ngrok
-```
-
----
-
-## Environment variables
-
-```
-DEPLOYER_PRIVATE_KEY=         # Deployer wallet private key
-NEXT_PUBLIC_REGISTRY_ADDRESS= # Deployed contract address
-AGENT_PRIVATE_KEY=            # Agent wallet private key
-FEE_RECIPIENT=                # Wallet that receives query fees
-NEXT_PUBLIC_FEE_RECIPIENT=    # Same as above (client-side)
-CELOSCAN_API_KEY=             # Etherscan V2 API key
-```
-
----
-
-## MiniPay compatibility
-
-The required MiniPay hook lives in `src/hooks/useMiniPay.ts`:
+CeloSense detects MiniPay via `window.ethereum.isMiniPay` and auto-connects:
 
 ```ts
-useEffect(() => {
-  if (window.ethereum && window.ethereum.isMiniPay) {
-    connect({ connector: injected({ target: "metaMask" }) });
-  }
-}, []);
+// src/hooks/useMiniPay.ts
+if (window.ethereum?.isMiniPay) {
+  connect({ connector: injected({ target: "metaMask" }) });
+}
 ```
 
-Auto-connects wallet inside MiniPay, hides the connect button.
+Inside MiniPay the connect button is hidden. See `docs/minipay.md` for the full integration guide.
+
+---
+
+## Docs
+
+| File | Content |
+|------|---------|
+| `docs/architecture.md` | Full system architecture and component map |
+| `docs/contract.md` | Contract ABI, functions, events, custom errors |
+| `docs/minipay.md` | MiniPay integration guide with wagmi v2 patterns |
 
 ---
 
@@ -146,19 +208,12 @@ Auto-connects wallet inside MiniPay, hides the connect button.
 - [x] MiniPay hook — `window.ethereum.isMiniPay` detection + auto-connect
 - [x] Smart contract deployed and verified on Celo mainnet
 - [x] On-chain query payments via `recordQuery()`
-- [x] Project submitted on Talent App
-- [x] AI agent track — autonomous wallet analysis, on-chain payment gate
-
----
-
-## ⚠️ Fee routing
-
-```
-# In .env.local — set this to YOUR wallet address
-# Query fees ($0.01 USDC per query) route on-chain to this address
-FEE_RECIPIENT=0xYourWalletAddress
-NEXT_PUBLIC_FEE_RECIPIENT=0xYourWalletAddress
-```
+- [x] Autonomous agent logging decisions every 5 minutes via `logDecision()`
+- [x] ERC-8004 identity registry — Agent ID 9228
+- [x] Whale leaderboard built from on-chain events
+- [x] 24 passing Hardhat tests
+- [x] GitHub issue templates, CONTRIBUTING.md, SECURITY.md
+- [x] Submitted to Celo Onchain Agents Hackathon (Best Agent + Most Activity tracks)
 
 ---
 
