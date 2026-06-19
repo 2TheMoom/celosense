@@ -6,21 +6,31 @@ import { publicClient, REGISTRY_ADDRESS, REGISTRY_ABI } from "@/lib/celo";
 
 export default function Landing() {
   const [totalRegistered, setTotalRegistered] = useState<string>("...");
+  const [totalDecisions, setTotalDecisions] = useState<string>("...");
 
   useEffect(() => {
-    async function fetchTotal() {
+    async function fetchStats() {
       try {
-        const total = await publicClient.readContract({
-          address: REGISTRY_ADDRESS,
-          abi: REGISTRY_ABI,
-          functionName: "totalRegistered",
-        }) as bigint;
-        setTotalRegistered(total.toString());
+        const [registered, decisions] = await Promise.all([
+          publicClient.readContract({
+            address: REGISTRY_ADDRESS,
+            abi: REGISTRY_ABI,
+            functionName: "totalRegistered",
+          }) as Promise<bigint>,
+          publicClient.readContract({
+            address: REGISTRY_ADDRESS,
+            abi: REGISTRY_ABI,
+            functionName: "totalDecisions",
+          }) as Promise<bigint>,
+        ]);
+        setTotalRegistered(registered.toString());
+        setTotalDecisions(decisions.toString());
       } catch {
         setTotalRegistered("—");
+        setTotalDecisions("—");
       }
     }
-    fetchTotal();
+    fetchStats();
   }, []);
 
   return (
@@ -33,6 +43,7 @@ export default function Landing() {
             <span className="land-brand-name">CELOSENSE</span>
           </div>
           <div className="land-nav-links">
+            <a href="https://8004scan.io/agents/celo/9228" target="_blank" rel="noopener noreferrer" className="land-nav-link">ERC-8004</a>
             <a href="https://celoscan.io/address/0x8a30F753942458897619A83D6467B0FF62DE7Abd#code" target="_blank" rel="noopener noreferrer" className="land-nav-link">Contract</a>
             <a href="https://github.com/2TheMoom/celosense" target="_blank" rel="noopener noreferrer" className="land-nav-link">GitHub</a>
             <a href="/app" className="land-btn-sm">Launch App</a>
@@ -45,18 +56,18 @@ export default function Landing() {
         <div className="land-hero-inner">
           <div className="land-hero-badge">
             <span className="land-badge-dot" />
-            Live on Celo Mainnet · Chain ID 42220
+            Live on Celo Mainnet · Agent Active · Chain ID 42220
           </div>
           <div className="land-hero-logo">
             <Logo size={96} />
           </div>
           <h1 className="land-h1">
-            On-Chain Intelligence<br />for the Celo Ecosystem
+            Autonomous On-Chain<br />Intelligence for Celo
           </h1>
           <p className="land-subhead">
-            CeloSense is an autonomous agent that monitors wallet activity,
-            flags whale movements, and delivers pay-per-query insights
-            natively inside MiniPay.
+            CeloSense monitors Celo mainnet every 5 minutes, detects whale movements,
+            scores wallet activity, and logs every decision permanently on-chain.
+            Pay-per-query insights via x402 — natively inside MiniPay.
           </p>
           <div className="land-hero-ctas">
             <a href="/app" className="land-btn-primary">Launch App</a>
@@ -69,13 +80,18 @@ export default function Landing() {
             </div>
             <div className="land-stat-divider" />
             <div className="land-stat">
-              <span className="land-stat-value">$0.01</span>
-              <span className="land-stat-label">Per Query (USDC)</span>
+              <span className="land-stat-value">{totalDecisions}</span>
+              <span className="land-stat-label">Decisions Logged</span>
             </div>
             <div className="land-stat-divider" />
             <div className="land-stat">
-              <span className="land-stat-value">42220</span>
-              <span className="land-stat-label">Celo Mainnet</span>
+              <span className="land-stat-value">5 min</span>
+              <span className="land-stat-label">Agent Cycle</span>
+            </div>
+            <div className="land-stat-divider" />
+            <div className="land-stat">
+              <span className="land-stat-value">$0.01</span>
+              <span className="land-stat-label">Per Query (USDC)</span>
             </div>
           </div>
         </div>
@@ -85,27 +101,34 @@ export default function Landing() {
       <section className="land-section">
         <div className="land-section-inner">
           <div className="land-section-label">HOW IT WORKS</div>
-          <h2 className="land-h2">Three steps to on-chain intelligence</h2>
+          <h2 className="land-h2">Four tabs. One autonomous agent.</h2>
           <div className="land-steps">
             <div className="land-step">
               <div className="land-step-num">01</div>
               <div className="land-step-icon">⬡</div>
-              <h3 className="land-step-title">Connect</h3>
-              <p className="land-step-body">Connect your wallet. Inside MiniPay, CeloSense detects and connects automatically — no button tap needed.</p>
+              <h3 className="land-step-title">Intelligence</h3>
+              <p className="land-step-body">Query any Celo wallet for $0.01 USDC via x402. Get live balances with CELO/USD price, recent USDC transfers, whale flags, and activity score 0–100.</p>
             </div>
             <div className="land-step-arrow">→</div>
             <div className="land-step">
               <div className="land-step-num">02</div>
               <div className="land-step-icon">◈</div>
-              <h3 className="land-step-title">Analyze</h3>
-              <p className="land-step-body">Enter any Celo wallet address. Pay $0.01 USDC via x402 and get live balances, transfer history, and activity scoring.</p>
+              <h3 className="land-step-title">Registry</h3>
+              <p className="land-step-body">Register your wallet on-chain. Creates a permanent, verifiable credential on Celo mainnet. Track your days registered and total on-chain queries.</p>
             </div>
             <div className="land-step-arrow">→</div>
             <div className="land-step">
               <div className="land-step-num">03</div>
-              <div className="land-step-icon">⚑</div>
-              <h3 className="land-step-title">Monitor</h3>
-              <p className="land-step-body">Register your wallet on-chain. CeloSense flags whale activity, large transfers, and unusual movements in real time.</p>
+              <div className="land-step-icon">⚙</div>
+              <h3 className="land-step-title">Agent</h3>
+              <p className="land-step-body">The autonomous agent runs every 5 minutes, classifies on-chain activity, and logs each decision on-chain via CeloSenseRegistry. Every entry links to the exact transaction.</p>
+            </div>
+            <div className="land-step-arrow">→</div>
+            <div className="land-step">
+              <div className="land-step-num">04</div>
+              <div className="land-step-icon">🐋</div>
+              <h3 className="land-step-title">Leaderboard</h3>
+              <p className="land-step-body">Whale wallets ranked by flag frequency — built entirely from on-chain DecisionLogged events. No database. Just Celo mainnet data.</p>
             </div>
           </div>
         </div>
@@ -120,32 +143,32 @@ export default function Landing() {
             <div className="land-feature">
               <div className="land-feature-icon navy">⬡</div>
               <h3 className="land-feature-title">MiniPay Native</h3>
-              <p className="land-feature-body">Detects MiniPay automatically and connects your wallet without friction. Built to the MiniPay Mini App spec.</p>
+              <p className="land-feature-body">Detects MiniPay automatically and connects without friction. Built to the MiniPay Mini App spec — no connect button inside the wallet.</p>
             </div>
             <div className="land-feature">
               <div className="land-feature-icon green">◈</div>
               <h3 className="land-feature-title">x402 Payments</h3>
-              <p className="land-feature-body">Every intelligence query is gated by x402 micropayments — $0.01 USDC settled on-chain. No subscriptions, no API keys.</p>
+              <p className="land-feature-body">Every intelligence query is gated by x402 micropayments — $0.01 USDC settled on-chain. No subscriptions, no API keys, no accounts.</p>
             </div>
             <div className="land-feature">
               <div className="land-feature-icon crimson">⚠</div>
               <h3 className="land-feature-title">Whale Detection</h3>
-              <p className="land-feature-body">Flags transfers over 10,000 USDC in real time. Activity scoring from 0-100 based on on-chain behavior.</p>
+              <p className="land-feature-body">Flags USDC transfers over $10,000 in real time. Activity scoring 0–100 based on on-chain behavior across 1,000 blocks per query.</p>
             </div>
             <div className="land-feature">
-              <div className="land-feature-icon navy">⛓</div>
-              <h3 className="land-feature-title">On-Chain Registry</h3>
-              <p className="land-feature-body">Register your wallet in the CeloSenseRegistry contract on mainnet. Immutable, non-upgradeable, no admin keys.</p>
+              <div className="land-feature-icon navy">⚙</div>
+              <h3 className="land-feature-title">Autonomous Agent</h3>
+              <p className="land-feature-body">Runs every 5 minutes, classifies market conditions, and logs decisions on-chain for $0.0001 USDC each. Fully permissionless, no manual trigger.</p>
             </div>
             <div className="land-feature">
-              <div className="land-feature-icon green">⬡</div>
-              <h3 className="land-feature-title">Live Balances</h3>
-              <p className="land-feature-body">Real-time CELO, USDC, and USDT balances pulled directly from Celo mainnet via viem. No intermediaries.</p>
+              <div className="land-feature-icon green">🐋</div>
+              <h3 className="land-feature-title">Whale Leaderboard</h3>
+              <p className="land-feature-body">Rankings built entirely from on-chain DecisionLogged events. Top flagged wallets with direct links to the exact transfer transactions on Celoscan.</p>
             </div>
             <div className="land-feature">
               <div className="land-feature-icon crimson">◈</div>
-              <h3 className="land-feature-title">Autonomous Agent</h3>
-              <p className="land-feature-body">The backend runs autonomously — no manual input, no dashboard. Just on-chain data, processed and delivered.</p>
+              <h3 className="land-feature-title">ERC-8004 Registered</h3>
+              <p className="land-feature-body">CeloSense is registered on the ERC-8004 Identity Registry on Celo mainnet as Agent #9228 — verifiable agent identity, active and discoverable.</p>
             </div>
           </div>
         </div>
@@ -157,7 +180,7 @@ export default function Landing() {
           <Logo size={56} />
           <h2 className="land-h2" style={{ marginTop: 20 }}>Start analyzing wallets now</h2>
           <p className="land-subhead" style={{ maxWidth: 480, margin: "12px auto 28px" }}>
-            Connect your wallet and query any address on Celo mainnet for $0.01 USDC.
+            Connect your wallet and query any address on Celo mainnet for $0.01 USDC. The agent is already running.
           </p>
           <a href="/app" className="land-btn-primary">Launch App</a>
         </div>
@@ -171,16 +194,12 @@ export default function Landing() {
             <span className="land-brand-name" style={{ fontSize: 13 }}>CELOSENSE</span>
           </div>
           <div className="land-footer-links">
+            <a href="https://8004scan.io/agents/celo/9228" target="_blank" rel="noopener noreferrer" className="land-footer-link">ERC-8004</a>
             <a href="https://celoscan.io/address/0x8a30F753942458897619A83D6467B0FF62DE7Abd#code" target="_blank" rel="noopener noreferrer" className="land-footer-link">Contract</a>
             <a href="https://github.com/2TheMoom/celosense" target="_blank" rel="noopener noreferrer" className="land-footer-link">GitHub</a>
             <a href="/app" className="land-footer-link">App</a>
           </div>
-          <a
-            href="https://x.com/olumi441"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="land-credit"
-          >
+          <a href="https://x.com/olumi441" target="_blank" rel="noopener noreferrer" className="land-credit">
             Built by Abu Olumi
           </a>
         </div>
