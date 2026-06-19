@@ -95,6 +95,21 @@ async function analyzeWallet(address: `0x${string}`) {
 
   const celoFloat = parseFloat(formatUnits(celoBalance, 18));
   const celoUsdValue = celoPrice !== null ? celoFloat * celoPrice : null;
+  const usdtFloat = parseFloat(formatUnits(usdtBalance as bigint, 6));
+  const totalVolume = recentTransfers.reduce((acc: number, t: any) => acc + parseFloat(t.amount), 0);
+
+  // ─── Natural language intelligence summary ──────────────────────────────────
+  const summary = generateSummary({
+    activityScore,
+    isWhale: whaleActivity.length > 0,
+    whaleCount: whaleActivity.length,
+    transferCount: recentTransfers.length,
+    totalVolume,
+    usdcFloat,
+    usdtFloat,
+    celoFloat,
+    celoUsdValue,
+  });
 
   return {
     address,
@@ -109,9 +124,93 @@ async function analyzeWallet(address: `0x${string}`) {
     whaleActivity,
     activityScore,
     isWhale: whaleActivity.length > 0,
+    summary,
     analyzedAt: new Date().toISOString(),
     blockRange: { from: fromBlock.toString(), to: latestBlock.toString() },
   };
+}
+
+function generateSummary(params: {
+  activityScore: number;
+  isWhale: boolean;
+  whaleCount: number;
+  transferCount: number;
+  totalVolume: number;
+  usdcFloat: number;
+  usdtFloat: number;
+  celoFloat: number;
+  celoUsdValue: number | null;
+}): string {
+  const {
+    activityScore,
+    isWhale,
+    whaleCount,
+    transferCount,
+    totalVolume,
+    usdcFloat,
+    usdtFloat,
+    celoFloat,
+    celoUsdValue,
+  } = params;
+
+  const parts: string[] = [];
+
+  // Activity level
+  if (activityScore >= 80) {
+    parts.push("This wallet is highly active on Celo mainnet.");
+  } else if (activityScore >= 50) {
+    parts.push("This wallet shows moderate on-chain activity.");
+  } else if (activityScore >= 20) {
+    parts.push("This wallet shows low but consistent on-chain activity.");
+  } else {
+    parts.push("This wallet has minimal recent on-chain activity.");
+  }
+
+  // Transfer activity
+  if (transferCount === 0) {
+    parts.push("No USDC transfers detected in the monitored window (~1,000 blocks).");
+  } else {
+    parts.push(
+      `${transferCount} USDC transfer${transferCount > 1 ? "s" : ""} detected in the last ~1,000 blocks, totaling $${totalVolume.toLocaleString(undefined, { maximumFractionDigits: 2 })} USDC.`
+    );
+  }
+
+  // Whale activity
+  if (isWhale) {
+    parts.push(
+      `⚠ ${whaleCount} large transfer${whaleCount > 1 ? "s" : ""} over $10,000 USDC flagged — this wallet meets the whale activity threshold.`
+    );
+  }
+
+  // Balance context
+  const stableTotal = usdcFloat + usdtFloat;
+  if (stableTotal > 10_000) {
+    parts.push(
+      `Stablecoin holdings are significant at $${stableTotal.toLocaleString(undefined, { maximumFractionDigits: 2 })} (USDC + USDT combined).`
+    );
+  } else if (stableTotal > 100) {
+    parts.push(`Current stablecoin balance: $${stableTotal.toLocaleString(undefined, { maximumFractionDigits: 2 })} USDC/USDT.`);
+  }
+
+  if (celoFloat > 0) {
+    const celoStr = celoUsdValue !== null
+      ? `${celoFloat.toFixed(2)} CELO (≈ $${celoUsdValue.toFixed(2)} USD)`
+      : `${celoFloat.toFixed(2)} CELO`;
+    parts.push(`Native balance: ${celoStr}.`);
+  }
+
+  // Score interpretation
+  parts.push(
+    `Activity score of ${activityScore}/100 reflects ${
+      activityScore >= 70
+        ? "high on-chain engagement — this wallet is actively participating in the Celo ecosystem."
+        : activityScore >= 40
+        ? "moderate engagement — regular but not intensive on-chain usage."
+        : "limited recent engagement in the monitored window."
+    }`
+  );
+
+  return parts.join(" ");
 }
 
 // ─── Route handler ────────────────────────────────────────────────────────────

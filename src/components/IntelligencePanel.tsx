@@ -23,6 +23,7 @@ interface IntelligenceData {
   isWhale: boolean;
   analyzedAt: string;
   blockRange: { from: string; to: string };
+  summary: string;
 }
 
 interface Props {
@@ -148,6 +149,15 @@ export function IntelligencePanel({ address, isMiniPay }: Props) {
             <div className="alert alert-green">
               <span className="alert-icon">✓</span>
               <div>No whale activity detected in the monitored window</div>
+            </div>
+          )}
+
+          {data.summary && (
+            <div className="card section-gap" style={{ borderLeft: "3px solid var(--navy)" }}>
+              <div className="card-title">Intelligence Summary</div>
+              <p style={{ fontFamily: "var(--body)", fontSize: 13, color: "var(--text)", lineHeight: 1.8 }}>
+                {data.summary}
+              </p>
             </div>
           )}
 
