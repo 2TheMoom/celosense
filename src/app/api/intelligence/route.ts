@@ -79,6 +79,7 @@ async function analyzeWallet(address: `0x${string}`) {
   });
 
   const recentTransfers = transferLogs.map((log: any) => ({
+    from: log.args.from,
     to: log.args.to,
     amount: formatUnits(log.args.value ?? 0n, 6),
     block: log.blockNumber?.toString(),

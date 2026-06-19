@@ -42,26 +42,108 @@ export function LeaderboardPanel() {
     return `#${rank + 1}`;
   };
 
+  const totalFlags = leaderboard.reduce((acc, e) => acc + e.flagCount, 0);
+  const topWallet = leaderboard[0] || null;
+  const mostRecentFlag = leaderboard.reduce((latest, e) => {
+    const ts = parseInt(e.lastFlaggedAt);
+    return ts > latest ? ts : latest;
+  }, 0);
+
   return (
     <div>
-      <div className="card" style={{ marginBottom: 16 }}>
-        <div className="card-title" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <span>Whale Leaderboard</span>
-          <button className="btn btn-secondary" onClick={fetchLeaderboard} style={{ padding: "4px 10px", fontSize: 11 }}>
-            ↻ Refresh
-          </button>
+      {/* ─── Premium Summary Card ─────────────────────────────────────── */}
+      <div className="card" style={{ borderLeft: "3px solid var(--crimson)", marginBottom: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+          <div className="card-title" style={{ margin: 0 }}>Whale Leaderboard</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{
+              fontSize: 11, fontFamily: "var(--mono)", padding: "3px 10px", borderRadius: 2,
+              background: "rgba(176,28,46,0.08)", color: "var(--crimson)",
+              border: "1px solid rgba(176,28,46,0.3)", textTransform: "uppercase", letterSpacing: 0.5,
+            }}>
+              🐋 Live Rankings
+            </span>
+            <button className="btn btn-secondary" onClick={fetchLeaderboard} style={{ padding: "4px 10px", fontSize: 11 }}>
+              ↻
+            </button>
+          </div>
         </div>
-        <div style={{ fontFamily: "var(--mono)", fontSize: 11, color: "var(--muted)" }}>
-          Wallets most frequently flagged for large USDC movements by the autonomous agent
-          {blockRange && (
-            <> · blocks {blockRange.from}–{blockRange.to}</>
+
+        <p style={{ fontFamily: "var(--body)", fontSize: 13, color: "var(--muted)", lineHeight: 1.8, marginBottom: 16 }}>
+          {loading ? "Loading leaderboard data…" : leaderboard.length === 0
+            ? "No whale activity detected in the current monitoring window. The agent checks every 5 minutes."
+            : `The autonomous agent has flagged ${leaderboard.length} unique wallet${leaderboard.length > 1 ? "s" : ""} for large USDC movements across ${totalFlags} detection event${totalFlags > 1 ? "s" : ""}${topWallet ? `. Top wallet flagged ${topWallet.flagCount} time${topWallet.flagCount > 1 ? "s" : ""}` : ""}.${mostRecentFlag > 0 ? ` Last detection: ${new Date(mostRecentFlag * 1000).toLocaleTimeString()}.` : ""}`
+          }
+        </p>
+
+        <div style={{ height: 1, background: "var(--border)", margin: "4px 0 14px" }} />
+
+        {/* Metric tiles */}
+        <div className="card-grid">
+          <div className="metric">
+            <div className="metric-label">Unique Whales</div>
+            <div className="metric-value crimson">{loading ? "—" : leaderboard.length}</div>
+            <div className="metric-sub">flagged wallets</div>
+          </div>
+          <div className="metric">
+            <div className="metric-label">Total Flags</div>
+            <div className="metric-value">{loading ? "—" : totalFlags}</div>
+            <div className="metric-sub">detection events</div>
+          </div>
+          <div className="metric">
+            <div className="metric-label">Top Flag Count</div>
+            <div className="metric-value navy">{loading ? "—" : topWallet ? topWallet.flagCount : "—"}</div>
+            <div className="metric-sub">most flagged wallet</div>
+          </div>
+          <div className="metric">
+            <div className="metric-label">Last Detection</div>
+            <div className="metric-value" style={{ fontSize: 16 }}>
+              {loading || !mostRecentFlag ? "—" : new Date(mostRecentFlag * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+            </div>
+            <div className="metric-sub">agent cycle: 5 min</div>
+          </div>
+        </div>
+
+        {/* Signal pills */}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 14 }}>
+          {!loading && leaderboard.length > 0 && (
+            <span style={{
+              fontSize: 11, fontFamily: "var(--mono)", padding: "3px 10px", borderRadius: 2,
+              background: "rgba(176,28,46,0.08)", color: "var(--crimson)",
+              border: "1px solid rgba(176,28,46,0.3)",
+            }}>
+              ⚠ {leaderboard.filter(e => e.highActivityCount > 0).length} high activity wallets
+            </span>
           )}
+          <span style={{
+            fontSize: 11, fontFamily: "var(--mono)", padding: "3px 10px", borderRadius: 2,
+            background: "rgba(31,58,143,0.06)", color: "var(--navy)",
+            border: "1px solid rgba(31,58,143,0.2)",
+          }}>
+            ⬡ Threshold: $10,000 USDC
+          </span>
+          <span style={{
+            fontSize: 11, fontFamily: "var(--mono)", padding: "3px 10px", borderRadius: 2,
+            background: "var(--surface)", color: "var(--muted)",
+            border: "1px solid var(--border)",
+          }}>
+            ○ {blockRange ? `Blocks ${blockRange.from}–${blockRange.to}` : "Last ~10,000 blocks"}
+          </span>
+          <span style={{
+            fontSize: 11, fontFamily: "var(--mono)", padding: "3px 10px", borderRadius: 2,
+            background: "var(--surface)", color: "var(--muted)",
+            border: "1px solid var(--border)",
+          }}>
+            ◈ Powered by CeloSenseRegistry
+          </span>
         </div>
       </div>
 
+      {/* ─── Rankings List ─────────────────────────────────────────────── */}
       <div className="card">
+        <div className="card-title">Rankings</div>
         {loading ? (
-          <div className="loading-text">Loading leaderboard…</div>
+          <div className="loading-text">Loading rankings…</div>
         ) : leaderboard.length === 0 ? (
           <div className="empty-text">No whale activity detected yet in the monitored window.</div>
         ) : (
@@ -114,6 +196,11 @@ export function LeaderboardPanel() {
                     </a>
                     <div style={{ fontFamily: "var(--mono)", fontSize: 10, color: "var(--muted)", marginTop: 2 }}>
                       Last flagged: {date}
+                      {entry.highActivityCount > 0 && (
+                        <span style={{ marginLeft: 8, color: "var(--crimson)" }}>
+                          · {entry.highActivityCount} high activity
+                        </span>
+                      )}
                     </div>
                   </div>
 
@@ -150,7 +237,7 @@ export function LeaderboardPanel() {
       </div>
 
       <div style={{ marginTop: 12, fontSize: 11, color: "var(--faint)", fontFamily: "var(--mono)", textAlign: "right" }}>
-        Ranked by flag frequency · powered by CeloSenseRegistry on-chain decision log
+        Ranked by flag frequency · auto-refreshes every 5 min
       </div>
     </div>
   );

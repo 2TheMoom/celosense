@@ -6,6 +6,7 @@ import { REGISTRY_ADDRESS, REGISTRY_ABI } from "@/lib/celo";
 import { USDC_ADDRESS, USDC_ABI, QUERY_PRICE } from "@/lib/usdc";
 
 interface Transfer {
+  from: string;
   to: string;
   amount: string;
   block: string;
@@ -300,16 +301,21 @@ export function IntelligencePanel({ address, isMiniPay }: Props) {
               <div className="transfers-list">
                 {data.recentTransfers.map((t, i) => {
                   const isWhale = parseFloat(t.amount) > 10_000;
+                  const celoscanLink = t.txHash
+                    ? `https://celoscan.io/tx/${t.txHash}`
+                    : `https://celoscan.io/address/${t.from || t.to}`;
                   return (
                     <div key={i} className={`transfer-row ${isWhale ? "whale" : ""}`}>
-                      <span className="transfer-to">→ {t.to?.slice(0, 8)}…{t.to?.slice(-4)}</span>
+                      <span className="transfer-to">
+                        {t.from ? `${t.from.slice(0, 6)}…${t.from.slice(-4)}` : "—"}
+                        {" → "}
+                        {t.to?.slice(0, 6)}…{t.to?.slice(-4)}
+                      </span>
                       <span className={`transfer-amount ${isWhale ? "whale" : ""}`}>
                         {parseFloat(t.amount).toLocaleString()} USDC
                       </span>
                       {isWhale && <span className="whale-tag">WHALE</span>}
-                      {t.txHash && (
-                        <a href={`https://celoscan.io/tx/${t.txHash}`} target="_blank" rel="noopener noreferrer" className="tx-link">↗</a>
-                      )}
+                      <a href={celoscanLink} target="_blank" rel="noopener noreferrer" className="tx-link">↗</a>
                     </div>
                   );
                 })}
