@@ -69,7 +69,7 @@ async function analyzeWallet(address: `0x${string}`) {
     fetchCeloPrice(),
   ]);
 
-  const fromBlock = latestBlock - 500n;
+  const fromBlock = latestBlock - 1000n;
   const transferLogs = await publicClient.getLogs({
     address: TOKENS.USDC,
     event: parseAbiItem("event Transfer(address indexed from, address indexed to, uint256 value)"),
