@@ -46,7 +46,6 @@ export function IntelligencePanel({ address, isMiniPay }: Props) {
     setData(null);
 
     try {
-      // Step 1: Approve USDC spend on registry contract
       setStep("approving");
       await writeContractAsync({
         address: USDC_ADDRESS,
@@ -55,7 +54,6 @@ export function IntelligencePanel({ address, isMiniPay }: Props) {
         args: [REGISTRY_ADDRESS, QUERY_PRICE],
       });
 
-      // Step 2: Call recordQuery on registry — pays USDC + emits event on our contract
       setStep("recording");
       const txHash = await writeContractAsync({
         address: REGISTRY_ADDRESS,
@@ -64,11 +62,9 @@ export function IntelligencePanel({ address, isMiniPay }: Props) {
         args: [queryAddress as `0x${string}`],
       });
 
-      // Step 3: Wait for confirmation
       setStep("confirming");
       await new Promise((res) => setTimeout(res, 3000));
 
-      // Step 4: Fetch intelligence with tx hash as proof
       setStep("fetching");
       const res = await fetch(`/api/intelligence?address=${queryAddress}`, {
         headers: { "X-PAYMENT": txHash },
@@ -104,17 +100,21 @@ export function IntelligencePanel({ address, isMiniPay }: Props) {
     return <><span className="spinner" /> Loading…</>;
   };
 
+  const totalVolume = data
+    ? data.recentTransfers.reduce((acc, t) => acc + parseFloat(t.amount), 0)
+    : 0;
+
   return (
     <div>
+      {/* Query bar */}
       <div className="card" style={{ marginBottom: 16 }}>
         <div className="card-title">Query Wallet Intelligence</div>
-        <div style={{ display: "flex", gap: 10 }}>
+        <div className="query-bar">
           <input
             type="text"
             value={queryAddress}
             onChange={(e) => setQueryAddress(e.target.value as `0x${string}`)}
             placeholder="0x wallet address"
-            style={{ flex: 1 }}
           />
           <button
             className="btn btn-primary"
@@ -133,34 +133,136 @@ export function IntelligencePanel({ address, isMiniPay }: Props) {
 
       {data && (
         <>
-          {data.isWhale && (
-            <div className="alert alert-whale">
-              <span className="alert-icon">⚠</span>
-              <div>
-                <strong>Whale Activity Detected</strong>
-                <div style={{ fontSize: 12, marginTop: 3 }}>
-                  {data.whaleActivity.length} transfer(s) over 10,000 USDC in the last ~500 blocks
+          {/* ─── Intelligence Summary Card ─────────────────────────────── */}
+          <div className="card section-gap" style={{
+            borderLeft: `3px solid ${data.isWhale ? "var(--crimson)" : "var(--green)"}`,
+          }}>
+            {/* Header */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+              <div className="card-title" style={{ margin: 0 }}>Intelligence Summary</div>
+              <span style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 5,
+                fontSize: 11,
+                fontWeight: 700,
+                fontFamily: "var(--mono)",
+                padding: "3px 10px",
+                borderRadius: 2,
+                background: data.isWhale ? "rgba(176,28,46,0.08)" : "rgba(26,107,60,0.08)",
+                color: data.isWhale ? "var(--crimson)" : "var(--green)",
+                border: `1px solid ${data.isWhale ? "rgba(176,28,46,0.3)" : "rgba(26,107,60,0.3)"}`,
+                letterSpacing: 0.5,
+                textTransform: "uppercase",
+              }}>
+                {data.isWhale ? "⚠ Whale Detected" : "✓ Normal Activity"}
+              </span>
+            </div>
+
+            {/* Summary text */}
+            <p style={{
+              fontFamily: "var(--body)",
+              fontSize: 13,
+              color: "var(--text)",
+              lineHeight: 1.85,
+              marginBottom: 16,
+            }}>
+              {data.summary}
+            </p>
+
+            {/* Divider */}
+            <div style={{ height: 1, background: "var(--border)", margin: "4px 0 14px" }} />
+
+            {/* Metric tiles */}
+            <div className="card-grid">
+              <div className="metric">
+                <div className="metric-label">Activity Score</div>
+                <div className={`metric-value ${data.activityScore > 60 ? "navy" : data.activityScore > 30 ? "green" : ""}`}>
+                  {data.activityScore}
+                  <span style={{ fontSize: 13, color: "var(--muted)" }}>/100</span>
+                </div>
+                <div className="score-bar-wrap">
+                  <div className="score-bar-track">
+                    <div className="score-bar-fill" style={{ width: `${data.activityScore}%` }} />
+                  </div>
+                </div>
+              </div>
+              <div className="metric">
+                <div className="metric-label">Transfers</div>
+                <div className="metric-value">{data.recentTransfers.length}</div>
+                <div className="metric-sub">in monitored window</div>
+              </div>
+              <div className="metric">
+                <div className="metric-label">Total Volume</div>
+                <div className={`metric-value ${data.isWhale ? "crimson" : ""}`}>
+                  ${totalVolume > 1000
+                    ? (totalVolume / 1000).toFixed(1) + "K"
+                    : totalVolume.toFixed(0)}
+                </div>
+                <div className="metric-sub">USDC transferred</div>
+              </div>
+              <div className="metric">
+                <div className="metric-label">CELO Balance</div>
+                <div className="metric-value green">
+                  {parseFloat(data.balances.celo) > 1000
+                    ? (parseFloat(data.balances.celo) / 1000).toFixed(1) + "K"
+                    : parseFloat(data.balances.celo).toFixed(2)}
+                </div>
+                <div className="metric-sub">
+                  {data.celoUsdValue !== null ? `≈ $${data.celoUsdValue.toFixed(2)} USD` : "native"}
                 </div>
               </div>
             </div>
-          )}
 
-          {!data.isWhale && (
-            <div className="alert alert-green">
-              <span className="alert-icon">✓</span>
-              <div>No whale activity detected in the monitored window</div>
+            {/* Signal pills */}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 14 }}>
+              {data.isWhale && (
+                <span style={{
+                  fontSize: 11, fontFamily: "var(--mono)", padding: "3px 10px", borderRadius: 2,
+                  background: "rgba(176,28,46,0.08)", color: "var(--crimson)",
+                  border: "1px solid rgba(176,28,46,0.3)",
+                }}>
+                  ⚠ {data.whaleActivity.length} whale transfer{data.whaleActivity.length > 1 ? "s" : ""}
+                </span>
+              )}
+              {!data.isWhale && (
+                <span style={{
+                  fontSize: 11, fontFamily: "var(--mono)", padding: "3px 10px", borderRadius: 2,
+                  background: "rgba(26,107,60,0.08)", color: "var(--green)",
+                  border: "1px solid rgba(26,107,60,0.3)",
+                }}>
+                  ✓ No whale flags
+                </span>
+              )}
+              {data.recentTransfers.length > 0 && (
+                <span style={{
+                  fontSize: 11, fontFamily: "var(--mono)", padding: "3px 10px", borderRadius: 2,
+                  background: "rgba(31,58,143,0.06)", color: "var(--navy)",
+                  border: "1px solid rgba(31,58,143,0.2)",
+                }}>
+                  ⬡ {data.recentTransfers.length} transfer{data.recentTransfers.length > 1 ? "s" : ""} detected
+                </span>
+              )}
+              {parseFloat(data.balances.usdc) + parseFloat(data.balances.usdt) > 1000 && (
+                <span style={{
+                  fontSize: 11, fontFamily: "var(--mono)", padding: "3px 10px", borderRadius: 2,
+                  background: "rgba(26,107,60,0.06)", color: "var(--green)",
+                  border: "1px solid rgba(26,107,60,0.2)",
+                }}>
+                  ◈ Significant stables
+                </span>
+              )}
+              <span style={{
+                fontSize: 11, fontFamily: "var(--mono)", padding: "3px 10px", borderRadius: 2,
+                background: "var(--surface)", color: "var(--muted)",
+                border: "1px solid var(--border)",
+              }}>
+                ○ Last ~1,000 blocks
+              </span>
             </div>
-          )}
+          </div>
 
-          {data.summary && (
-            <div className="card section-gap" style={{ borderLeft: "3px solid var(--navy)" }}>
-              <div className="card-title">Intelligence Summary</div>
-              <p style={{ fontFamily: "var(--body)", fontSize: 13, color: "var(--text)", lineHeight: 1.8 }}>
-                {data.summary}
-              </p>
-            </div>
-          )}
-
+          {/* ─── Balances Card ─────────────────────────────────────────── */}
           <div className="card section-gap">
             <div className="card-title">Balances</div>
             <div className="card-grid">
@@ -168,9 +270,7 @@ export function IntelligencePanel({ address, isMiniPay }: Props) {
                 <div className="metric-label">CELO</div>
                 <div className="metric-value green">{parseFloat(data.balances.celo).toFixed(4)}</div>
                 <div className="metric-sub">
-                  {data.celoUsdValue !== null
-                    ? `≈ $${data.celoUsdValue.toFixed(2)} USD`
-                    : "native"}
+                  {data.celoUsdValue !== null ? `≈ $${data.celoUsdValue.toFixed(2)} USD` : "native"}
                 </div>
               </div>
               <div className="metric">
@@ -183,21 +283,10 @@ export function IntelligencePanel({ address, isMiniPay }: Props) {
                 <div className="metric-value">{parseFloat(data.balances.usdt).toFixed(2)}</div>
                 <div className="metric-sub">stablecoin</div>
               </div>
-              <div className="metric">
-                <div className="metric-label">Activity Score</div>
-                <div className={`metric-value ${data.activityScore > 60 ? "navy" : data.activityScore > 30 ? "green" : ""}`}>
-                  {data.activityScore}
-                  <span style={{ fontSize: 14, color: "var(--muted)" }}>/100</span>
-                </div>
-                <div className="score-bar-wrap">
-                  <div className="score-bar-track">
-                    <div className="score-bar-fill" style={{ width: `${data.activityScore}%` }} />
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
 
+          {/* ─── Recent Transfers ──────────────────────────────────────── */}
           <div className="card section-gap">
             <div className="card-title">
               Recent USDC Transfers
