@@ -6,16 +6,10 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
-const CHUNK_SIZE = 800n; // safely under every fallback RPC's observed range limit
+const CHUNK_SIZE = 800n;
 
-// In-memory cache, keyed by the decision's own txHash (immutable once mined).
-// Survives across requests within the same warm serverless instance, avoiding
-// redundant getLogs calls for whale decisions we've already resolved before.
 const transferCache = new Map<string, string | null>();
 
-// Splits a wide block range into small chunks and queries each sequentially,
-// merging results. Avoids "block range too large" errors across providers
-// with different, undocumented, or inconsistent eth_getLogs limits.
 async function getLogsChunked(params: {
   address: `0x${string}`;
   event: any;
@@ -39,7 +33,6 @@ async function getLogsChunked(params: {
       allLogs.push(...chunkLogs);
     } catch (err) {
       console.error(`Chunk ${start}-${end} failed:`, err);
-      // Skip this chunk rather than failing the whole request
     }
     start = end + 1n;
   }
@@ -47,8 +40,6 @@ async function getLogsChunked(params: {
   return allLogs;
 }
 
-// For a given decision, find the specific USDC transfer tx that triggered it
-// by searching a tight window of blocks right before the decision was logged.
 async function findTransferTxHash(
   decisionTxHash: string,
   target: string,
@@ -69,7 +60,20 @@ async function findTransferTxHash(
       toBlock: decisionBlock,
     });
 
-    const result = logs.length > 0 ? (logs[logs.length - 1] as any).transactionHash : null;
+    if (logs.length === 0) {
+      transferCache.set(decisionTxHash, null);
+      return null;
+    }
+
+    // Find the largest transfer — not just the most recent one.
+    // The most recent may be a small DEX swap; the whale trigger was the largest.
+    const largest = (logs as any[]).reduce((max, log) => {
+      const val = log.args?.value ?? 0n;
+      const maxVal = max.args?.value ?? 0n;
+      return val > maxVal ? log : max;
+    });
+
+    const result = largest.transactionHash ?? null;
     transferCache.set(decisionTxHash, result);
     return result;
   } catch {
@@ -94,8 +98,6 @@ export async function GET() {
 
     const sorted = [...logs].reverse();
 
-    // Only look up transfer tx hashes for whale-related decisions to keep this fast.
-    // Cached lookups resolve instantly; only genuinely new whale decisions hit the RPC.
     const decisions = await Promise.all(
       sorted.map(async (log: any) => {
         const target = log.args?.target;
