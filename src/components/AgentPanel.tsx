@@ -33,7 +33,7 @@ export function AgentPanel() {
   const [decisions, setDecisions] = useState<Decision[]>([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
-  const [visibleCount, setVisibleCount] = useState(20);
+  const [whaleCount, setWhaleCount] = useState(0);
 
   const fetchDecisions = async () => {
     setLoading(true);
@@ -42,6 +42,8 @@ export function AgentPanel() {
       const data = await res.json();
       setDecisions(data.decisions || []);
       setTotal(data.total || 0);
+      const whales = (data.decisions || []).filter((d: any) => d.decisionType === "WHALE_DETECTED" || d.decisionType === "HIGH_WHALE_ACTIVITY");
+      setWhaleCount(whales.length);
     } catch (e) {
       console.error(e);
     } finally {
@@ -69,8 +71,15 @@ export function AgentPanel() {
           <div style={{ fontFamily: "var(--mono)", fontSize: 11, color: "var(--muted)" }}>
             Runs every 5 min · $0.0001 USDC per decision
           </div>
-          <div style={{ marginLeft: "auto", fontFamily: "var(--headline)", fontSize: 20, fontWeight: 800, color: "var(--navy)" }}>
-            {total} <span style={{ fontSize: 12, color: "var(--muted)", fontFamily: "var(--mono)", fontWeight: 400 }}>decisions logged</span>
+          <div style={{ marginLeft: "auto", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
+            <div style={{ fontFamily: "var(--headline)", fontSize: 20, fontWeight: 800, color: "var(--navy)" }}>
+              {total} <span style={{ fontSize: 12, color: "var(--muted)", fontFamily: "var(--mono)", fontWeight: 400 }}>decisions logged</span>
+            </div>
+            {whaleCount > 0 && (
+              <div style={{ fontFamily: "var(--mono)", fontSize: 11, color: "var(--crimson)", fontWeight: 700 }}>
+                ⚠ {whaleCount} whale alert{whaleCount > 1 ? "s" : ""} in window
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -90,7 +99,7 @@ export function AgentPanel() {
           <div className="empty-text">No decisions logged yet. Agent will run shortly.</div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {decisions.slice(0, visibleCount).map((d, i) => {
+            {decisions.map((d, i) => {
               const color = DECISION_COLORS[d.decisionType] || "";
               const icon = DECISION_ICONS[d.decisionType] || "◈";
               const date = d.timestamp
@@ -177,20 +186,10 @@ export function AgentPanel() {
             })}
           </div>
         )}
-
-        {!loading && decisions.length > visibleCount && (
-          <button
-            className="btn btn-secondary"
-            onClick={() => setVisibleCount((v) => v + 20)}
-            style={{ width: "100%", justifyContent: "center", marginTop: 12 }}
-          >
-            Load more ({decisions.length - visibleCount} remaining)
-          </button>
-        )}
       </div>
 
       <div style={{ marginTop: 12, fontSize: 11, color: "var(--faint)", fontFamily: "var(--mono)", textAlign: "right" }}>
-        Showing {Math.min(visibleCount, decisions.length)} of {decisions.length} decisions (last ~28h) · Agent wallet: 0x1074…E3EE
+        Showing all {decisions.length} decisions · Agent wallet: 0x1074…E3EE
       </div>
     </div>
   );
