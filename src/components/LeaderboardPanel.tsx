@@ -72,7 +72,16 @@ export function LeaderboardPanel() {
         <p style={{ fontFamily: "var(--body)", fontSize: 13, color: "var(--muted)", lineHeight: 1.8, marginBottom: 16 }}>
           {loading ? "Loading leaderboard data…" : leaderboard.length === 0
             ? "No whale activity detected in the current monitoring window. The agent checks every 5 minutes."
-            : `The autonomous agent has flagged ${leaderboard.length} unique wallet${leaderboard.length > 1 ? "s" : ""} for large USDC movements across ${totalFlags} detection event${totalFlags > 1 ? "s" : ""}${topWallet ? `. Top wallet flagged ${topWallet.flagCount} time${topWallet.flagCount > 1 ? "s" : ""}` : ""}.${mostRecentFlag > 0 ? ` Last detection: ${new Date(mostRecentFlag * 1000).toLocaleTimeString()}.` : ""}`
+            : (() => {
+                const activityLevel = totalFlags > 20 ? "elevated" : totalFlags > 10 ? "moderate" : "low";
+                const highActivity = leaderboard.filter(e => e.highActivityCount > 0);
+                const topAddr = topWallet ? `${topWallet.address.slice(0, 8)}…${topWallet.address.slice(-4)}` : "";
+                const timeSince = mostRecentFlag > 0
+                  ? Math.floor((Date.now() - mostRecentFlag * 1000) / 60000)
+                  : null;
+
+                return `Whale activity is ${activityLevel} — ${leaderboard.length} unique wallet${leaderboard.length > 1 ? "s" : ""} flagged across ${totalFlags} detection event${totalFlags > 1 ? "s" : ""} in the current window.${topWallet ? ` ${topAddr} leads with ${topWallet.flagCount} flag${topWallet.flagCount > 1 ? "s" : ""}.` : ""}${highActivity.length > 0 ? ` ${highActivity.length} wallet${highActivity.length > 1 ? "s" : ""} triggered HIGH_WHALE_ACTIVITY classification.` : ""}${timeSince !== null ? ` Last detection ${timeSince < 2 ? "just now" : `${timeSince} min ago`}.` : ""}`;
+              })()
           }
         </p>
 
