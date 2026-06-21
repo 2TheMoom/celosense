@@ -8,7 +8,7 @@ CeloSense monitors Celo mainnet every 5 minutes, detects whale movements, scores
 **Live:** [celosense.vercel.app](https://celosense.vercel.app)
 **Contract:** [CeloSenseRegistry on Celoscan](https://celoscan.io/address/0x8a30F753942458897619A83D6467B0FF62DE7Abd#code)
 **ERC-8004 Agent:** [8004scan.io/agents/celo/9228](https://8004scan.io/agents/celo/9228)
-**Builder:** [Abu Olumi](https://x.com/olumi441)
+**Builder:** [@olumi441](https://x.com/olumi441)
 
 ---
 
@@ -18,23 +18,26 @@ CeloSense monitors Celo mainnet every 5 minutes, detects whale movements, scores
 - Analyzes any Celo wallet — CELO/USDC/USDT balances with live CELO/USD price
 - Scans last 1,000 blocks for USDC transfers, flags whale activity (>$10,000)
 - Computes activity score 0–100 based on transfer volume and frequency
+- **Premium Intelligence Summary Card** — natural language explanation of wallet behavior, status badge, 4 metric tiles, and signal pills
 - Pay-per-query API gated by on-chain USDC payment — $0.01 via `recordQuery()`
 
 ### Registry Tab
 - On-chain wallet registration — permanent, verifiable credential on Celo mainnet
-- Shows personal stats: days registered and total queries paid on-chain
+- **Personal Stats Card** — days registered and total queries paid on-chain
+- **Live Registration Feed** — recent `WalletRegistered` events with active/inactive status and Celoscan links
 - Tracks total registered wallets across the ecosystem
 
 ### Agent Tab
 - Autonomous agent runs every 5 minutes via cron, funded by a dedicated agent wallet
 - Classifies each run: `HIGH_WHALE_ACTIVITY` / `WHALE_DETECTED` / `HIGH_VOLUME` / `NORMAL` / `QUIET_PERIOD`
 - Logs every decision on-chain via `logDecision()` — $0.0001 USDC per decision
-- Every entry links directly to the specific transfer transaction on Celoscan
+- Every entry links directly to the **largest** transfer transaction on Celoscan (not just the address)
 
 ### Leaderboard Tab
-- Ranks wallets most frequently flagged for whale activity
-- Built entirely from on-chain `DecisionLogged` events — no database
-- Medal ranking for top 3 flagged wallets with direct Celoscan links
+- **Premium Summary Card** — total unique whales, flag count, top flagged wallet, last detection time
+- Rankings built entirely from on-chain `DecisionLogged` events — no database
+- Medal ranking for top 3 flagged wallets with direct Celoscan transfer links
+- Auto-refreshes every 5 minutes in sync with the agent cycle
 
 ---
 
@@ -57,7 +60,7 @@ MiniPay / Browser Wallet
   Approve USDC → recordQuery(target) → CeloSenseRegistry
         ↓
   Intelligence Agent (viem publicClient)
-  Balances · Transfers · Whale flags · Activity score
+  Balances · Transfers · Whale flags · Activity score · NL Summary
 ```
 
 ---
@@ -77,19 +80,17 @@ MiniPay / Browser Wallet
 ### Key functions
 
 ```solidity
-register()                              // Opt wallet into monitoring
-deregister()                            // Opt out
-recordQuery(address target)             // Pay $0.01 USDC + emit QueryRecorded
-logDecision(string type, address target, uint256 score)  // Agent only — $0.0001 USDC
-getStatus(address wallet)               // Check registration + timestamp
-totalRegistered                         // Live registered wallet count
-totalQueries                            // All-time query count
-totalDecisions                          // All-time agent decision count
+register()                                              // Opt wallet into monitoring
+deregister()                                            // Opt out
+recordQuery(address target)                             // Pay $0.01 USDC + emit QueryRecorded
+logDecision(string type, address target, uint256 score) // Agent only — $0.0001 USDC
+getStatus(address wallet)                               // Check registration + timestamp
+totalRegistered                                         // Live registered wallet count
+totalQueries                                            // All-time query count
+totalDecisions                                          // All-time agent decision count
 ```
 
 ### ERC-8004 Identity
-
-CeloSense is registered on the ERC-8004 Identity Registry on Celo mainnet:
 
 | | |
 |---|---|
@@ -137,7 +138,7 @@ CeloSenseRegistry - logDecision()   8 tests
 ## Setup
 
 ```bash
-git clone https://github.com/2TheMoom/celosense
+git clone https://github.com/2TheMoon/celosense
 cd celosense
 npm install
 cp .env.example .env.local
@@ -156,7 +157,6 @@ NEXT_PUBLIC_REGISTRY_ADDRESS=   # Deployed contract address
 AGENT_PRIVATE_KEY=              # Agent wallet private key (NOT your personal wallet)
 AGENT_WALLET=                   # Agent wallet public address
 FEE_RECIPIENT=                  # Wallet that receives query and decision fees
-NEXT_PUBLIC_FEE_RECIPIENT=      # Same as above (client-side)
 CRON_SECRET=                    # Bearer token for /api/agent/run endpoint
 CELOSCAN_API_KEY=               # For contract verification
 ```
@@ -168,10 +168,8 @@ CELOSCAN_API_KEY=               # For contract verification
 ## Deploy contract
 
 ```bash
-# Mainnet
 npm run deploy:mainnet
 
-# Verify on Celoscan
 npx hardhat verify --network celo <ADDRESS> \
   "<USDC>" "<FEE_RECIPIENT>" "<AGENT_WALLET>" "10000" "100"
 ```
@@ -189,7 +187,7 @@ if (window.ethereum?.isMiniPay) {
 }
 ```
 
-Inside MiniPay the connect button is hidden. See `docs/minipay.md` for the full integration guide.
+Inside MiniPay the connect button is hidden. See `docs/minipay.md` for the full guide.
 
 ---
 
@@ -200,6 +198,9 @@ Inside MiniPay the connect button is hidden. See `docs/minipay.md` for the full 
 | `docs/architecture.md` | Full system architecture and component map |
 | `docs/contract.md` | Contract ABI, functions, events, custom errors |
 | `docs/minipay.md` | MiniPay integration guide with wagmi v2 patterns |
+| `CHANGELOG.md` | Full version history |
+| `CONTRIBUTING.md` | Contribution guide |
+| `SECURITY.md` | Vulnerability reporting process |
 
 ---
 
@@ -210,7 +211,10 @@ Inside MiniPay the connect button is hidden. See `docs/minipay.md` for the full 
 - [x] On-chain query payments via `recordQuery()`
 - [x] Autonomous agent logging decisions every 5 minutes via `logDecision()`
 - [x] ERC-8004 identity registry — Agent ID 9228
-- [x] Whale leaderboard built from on-chain events
+- [x] Whale leaderboard with premium summary card built from on-chain events
+- [x] Live registration feed from on-chain `WalletRegistered` events
+- [x] Premium intelligence summary card with natural language analysis
+- [x] Live CELO/USD price on every balance query
 - [x] 24 passing Hardhat tests
 - [x] GitHub issue templates, CONTRIBUTING.md, SECURITY.md
 - [x] Submitted to Celo Onchain Agents Hackathon (Best Agent + Most Activity tracks)
