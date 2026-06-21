@@ -11,6 +11,7 @@ interface Transfer {
   amount: string;
   block: string;
   txHash: string;
+  token?: string;
 }
 
 interface IntelligenceData {
@@ -362,7 +363,7 @@ export function IntelligencePanel({ address, isMiniPay }: Props) {
           {/* ─── Recent Transfers ──────────────────────────────────────── */}
           <div className="card section-gap">
             <div className="card-title">
-              Recent USDC Transfers
+              Recent Stablecoin Transfers
               <span style={{ marginLeft: 8, color: "var(--faint)", fontWeight: 400 }}>
                 blocks {data.blockRange.from}–{data.blockRange.to}
               </span>
@@ -384,7 +385,7 @@ export function IntelligencePanel({ address, isMiniPay }: Props) {
                         {t.to?.slice(0, 6)}…{t.to?.slice(-4)}
                       </span>
                       <span className={`transfer-amount ${isWhale ? "whale" : ""}`}>
-                        {parseFloat(t.amount).toLocaleString()} USDC
+                        {parseFloat(t.amount).toLocaleString()} {t.token || "USDC"}
                       </span>
                       {isWhale && <span className="whale-tag">WHALE</span>}
                       <a href={celoscanLink} target="_blank" rel="noopener noreferrer" className="tx-link">↗</a>
