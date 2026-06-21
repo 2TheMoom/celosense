@@ -134,6 +134,35 @@ export function IntelligencePanel({ address, isMiniPay }: Props) {
 
       {data && (
         <>
+          {/* ─── Wallet Overview ───────────────────────────────────────── */}
+          <div className="card section-gap" style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div className="card-title" style={{ margin: 0, marginBottom: 4 }}>Wallet Overview</div>
+              <div style={{ fontFamily: "var(--mono)", fontSize: 13, fontWeight: 700, color: "var(--text)", wordBreak: "break-all" }}>
+                {data.address}
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+              <button
+                className="btn btn-secondary"
+                style={{ padding: "5px 10px", fontSize: 11 }}
+                onClick={() => navigator.clipboard.writeText(data.address)}
+                title="Copy address"
+              >
+                ⎘ Copy
+              </button>
+              <a
+                href={`https://celoscan.io/address/${data.address}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-secondary"
+                style={{ padding: "5px 10px", fontSize: 11, textDecoration: "none" }}
+              >
+                Celoscan ↗
+              </a>
+            </div>
+          </div>
+
           {/* ─── Intelligence Summary Card ─────────────────────────────── */}
           <div className="card section-gap" style={{
             borderLeft: `3px solid ${data.isWhale ? "var(--crimson)" : "var(--green)"}`,
