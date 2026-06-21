@@ -8,13 +8,34 @@ import { RegistryPanel } from "@/components/RegistryPanel";
 import { AgentPanel } from "@/components/AgentPanel";
 import { LeaderboardPanel } from "@/components/LeaderboardPanel";
 import { Logo } from "@/components/Logo";
+import { publicClient, REGISTRY_ADDRESS, REGISTRY_ABI } from "@/lib/celo";
 
 export default function Home() {
   const [mounted, setMounted] = useState(false);
   const { isMiniPay, isDetecting, address, isConnected } = useMiniPay();
   const [activeTab, setActiveTab] = useState<"intelligence" | "registry" | "agent" | "leaderboard">("intelligence");
+  const [totalDecisions, setTotalDecisions] = useState<string | null>(null);
 
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => {
+    setMounted(true);
+    // Fetch total decisions for status bar
+    async function fetchDecisions() {
+      try {
+        const total = await publicClient.readContract({
+          address: REGISTRY_ADDRESS,
+          abi: REGISTRY_ABI,
+          functionName: "totalDecisions",
+        }) as bigint;
+        setTotalDecisions(total.toString());
+      } catch {
+        setTotalDecisions(null);
+      }
+    }
+    fetchDecisions();
+    // Refresh every 5 minutes in sync with agent cycle
+    const interval = setInterval(fetchDecisions, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <main className="app">
@@ -54,6 +75,12 @@ export default function Home() {
             <span className="status-value mono">
               {address.slice(0, 6)}…{address.slice(-4)}
             </span>
+          </div>
+        )}
+        {totalDecisions !== null && (
+          <div className="status-item">
+            <span className="status-label">Decisions</span>
+            <span className="status-value" style={{ color: "#4ade80" }}>{totalDecisions}</span>
           </div>
         )}
         <div className="status-item ml-auto">
