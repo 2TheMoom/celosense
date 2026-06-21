@@ -287,6 +287,49 @@ export function IntelligencePanel({ address, isMiniPay }: Props) {
             </div>
           </div>
 
+          {/* ─── Whale Breakdown ───────────────────────────────────────── */}
+          {data.isWhale && data.whaleActivity.length > 0 && (
+            <div className="card section-gap" style={{ borderLeft: "3px solid var(--crimson)" }}>
+              <div className="card-title" style={{ color: "var(--crimson)" }}>
+                ⚠ Whale Transfer Breakdown
+              </div>
+              <div className="transfers-list">
+                {data.whaleActivity.map((t, i) => {
+                  const celoscanLink = t.txHash
+                    ? `https://celoscan.io/tx/${t.txHash}`
+                    : `https://celoscan.io/address/${t.from || t.to}`;
+                  return (
+                    <div key={i} className="transfer-row whale">
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontFamily: "var(--mono)", fontSize: 11, color: "var(--muted)", marginBottom: 2 }}>
+                          {t.from ? `${t.from.slice(0, 8)}…${t.from.slice(-4)}` : "—"}
+                          {" → "}
+                          {t.to?.slice(0, 8)}…{t.to?.slice(-4)}
+                        </div>
+                        <div style={{ fontFamily: "var(--mono)", fontSize: 10, color: "var(--muted)" }}>
+                          Block {t.block}
+                        </div>
+                      </div>
+                      <span className="transfer-amount whale">
+                        ${parseFloat(t.amount).toLocaleString(undefined, { maximumFractionDigits: 2 })} USDC
+                      </span>
+                      <span className="whale-tag">WHALE</span>
+                      <a
+                        href={celoscanLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="tx-link"
+                        style={{ fontSize: 11, fontWeight: 700 }}
+                      >
+                        View tx ↗
+                      </a>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* ─── Recent Transfers ──────────────────────────────────────── */}
           <div className="card section-gap">
             <div className="card-title">
