@@ -36,6 +36,7 @@ export function AgentPanel() {
   const [total, setTotal] = useState(0);
   const [whaleCount, setWhaleCount] = useState(0);
   const [expanded, setExpanded] = useState(false);
+  const [countdown, setCountdown] = useState(300); // 5 minutes in seconds
   const PREVIEW_COUNT = 5;
 
   const fetchDecisions = async () => {
@@ -57,8 +58,20 @@ export function AgentPanel() {
   useEffect(() => {
     fetchDecisions();
     // Refresh every 5 minutes
-    const interval = setInterval(fetchDecisions, 5 * 60 * 1000);
-    return () => clearInterval(interval);
+    const interval = setInterval(() => {
+      fetchDecisions();
+      setCountdown(300);
+    }, 5 * 60 * 1000);
+
+    // Countdown timer — ticks every second
+    const countdownInterval = setInterval(() => {
+      setCountdown(prev => prev <= 1 ? 300 : prev - 1);
+    }, 1000);
+
+    return () => {
+      clearInterval(interval);
+      clearInterval(countdownInterval);
+    };
   }, []);
 
   return (
@@ -89,11 +102,16 @@ export function AgentPanel() {
 
       {/* Decisions feed */}
       <div className="card">
-        <div className="card-title" style={{ display: "flex", justifyContent: "space-between" }}>
+        <div className="card-title" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <span>Decision Log</span>
-          <button className="btn btn-secondary" onClick={fetchDecisions} style={{ padding: "4px 10px", fontSize: 11 }}>
-            ↻ Refresh
-          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontFamily: "var(--mono)", fontSize: 10, color: "var(--muted)" }}>
+              ↻ {Math.floor(countdown / 60)}:{String(countdown % 60).padStart(2, "0")}
+            </span>
+            <button className="btn btn-secondary" onClick={fetchDecisions} style={{ padding: "4px 10px", fontSize: 11 }}>
+              Refresh
+            </button>
+          </div>
         </div>
 
         {loading ? (
