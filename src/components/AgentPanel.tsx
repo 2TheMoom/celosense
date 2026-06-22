@@ -35,6 +35,8 @@ export function AgentPanel() {
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
   const [whaleCount, setWhaleCount] = useState(0);
+  const [expanded, setExpanded] = useState(false);
+  const PREVIEW_COUNT = 5;
 
   const fetchDecisions = async () => {
     setLoading(true);
@@ -100,7 +102,7 @@ export function AgentPanel() {
           <div className="empty-text">No decisions logged yet. Agent will run shortly.</div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {decisions.map((d, i) => {
+            {(expanded ? decisions : decisions.slice(0, PREVIEW_COUNT)).map((d, i) => {
               const color = DECISION_COLORS[d.decisionType] || "";
               const icon = DECISION_ICONS[d.decisionType] || "◈";
               const date = d.timestamp
@@ -185,6 +187,18 @@ export function AgentPanel() {
                 </div>
               );
             })}
+
+            {decisions.length > PREVIEW_COUNT && (
+              <button
+                className="btn btn-secondary"
+                onClick={() => setExpanded(!expanded)}
+                style={{ width: "100%", justifyContent: "center", marginTop: 4 }}
+              >
+                {expanded
+                  ? `▲ Show less`
+                  : `▼ Show all ${decisions.length} decisions (${decisions.length - PREVIEW_COUNT} more)`}
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -192,7 +206,7 @@ export function AgentPanel() {
       <ActivityTimeline />
 
       <div style={{ marginTop: 12, fontSize: 11, color: "var(--faint)", fontFamily: "var(--mono)", textAlign: "right" }}>
-        Showing all {decisions.length} decisions · Agent wallet: 0x1074…E3EE
+        Showing {expanded ? decisions.length : Math.min(PREVIEW_COUNT, decisions.length)} of {decisions.length} decisions · Agent wallet: 0x1074…E3EE
       </div>
     </div>
   );
