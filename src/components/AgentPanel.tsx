@@ -165,9 +165,9 @@ export function AgentPanel() {
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, flexShrink: 0 }}>
                     <span style={{
                       fontFamily: "var(--mono)", fontSize: 10,
-                      color: "var(--navy)",
-                      background: "rgba(31,58,143,0.06)",
-                      border: "1px solid rgba(31,58,143,0.2)",
+                      color: color === "crimson" ? "var(--crimson)" : color === "navy" ? "var(--navy)" : color === "green" ? "var(--green)" : "var(--muted)",
+                      background: color === "crimson" ? "rgba(176,28,46,0.06)" : color === "navy" ? "rgba(31,58,143,0.06)" : color === "green" ? "rgba(26,107,60,0.06)" : "var(--surface)",
+                      border: color === "crimson" ? "1px solid rgba(176,28,46,0.2)" : color === "navy" ? "1px solid rgba(31,58,143,0.2)" : color === "green" ? "1px solid rgba(26,107,60,0.2)" : "1px solid var(--border)",
                       padding: "2px 6px", borderRadius: 2,
                     }}>
                       Score {d.score}/100
