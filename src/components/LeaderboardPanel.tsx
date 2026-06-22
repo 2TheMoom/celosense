@@ -14,6 +14,7 @@ export function LeaderboardPanel() {
   const [leaderboard, setLeaderboard] = useState<WhaleEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [blockRange, setBlockRange] = useState<{ from: string; to: string } | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   const fetchLeaderboard = async () => {
     setLoading(true);
@@ -22,6 +23,7 @@ export function LeaderboardPanel() {
       const data = await res.json();
       setLeaderboard(data.leaderboard || []);
       setBlockRange(data.blockRange || null);
+      setLastUpdated(new Date());
     } catch (e) {
       console.error(e);
     } finally {
@@ -246,7 +248,7 @@ export function LeaderboardPanel() {
       </div>
 
       <div style={{ marginTop: 12, fontSize: 11, color: "var(--faint)", fontFamily: "var(--mono)", textAlign: "right" }}>
-        Ranked by flag frequency · auto-refreshes every 5 min
+        Ranked by flag frequency · auto-refreshes every 5 min{lastUpdated ? ` · Last updated: ${lastUpdated.toLocaleTimeString()}` : ""}
       </div>
     </div>
   );
