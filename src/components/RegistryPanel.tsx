@@ -193,6 +193,11 @@ export function RegistryPanel({ address }: Props) {
                     }}>
                       {reg.wallet?.slice(0, 10)}…{reg.wallet?.slice(-6)}
                       {isYou && <span style={{ marginLeft: 6, color: "var(--navy)", fontSize: 10 }}>(you)</span>}
+                    <button
+                      onClick={() => navigator.clipboard.writeText(reg.wallet)}
+                      style={{ marginLeft: 6, background: "none", border: "none", cursor: "pointer", color: "var(--muted)", fontSize: 10, fontFamily: "var(--mono)", padding: "0 4px" }}
+                      title="Copy address"
+                    >⎘</button>
                     </a>
                     <div style={{ fontFamily: "var(--mono)", fontSize: 10, color: "var(--muted)", marginTop: 2 }}>{date}</div>
                   </div>
