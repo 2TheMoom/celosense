@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { ActivityTimeline } from "@/components/ActivityTimeline";
 
 interface Decision {
   agent: string;
@@ -187,6 +188,8 @@ export function AgentPanel() {
           </div>
         )}
       </div>
+
+      <ActivityTimeline />
 
       <div style={{ marginTop: 12, fontSize: 11, color: "var(--faint)", fontFamily: "var(--mono)", textAlign: "right" }}>
         Showing all {decisions.length} decisions · Agent wallet: 0x1074…E3EE
