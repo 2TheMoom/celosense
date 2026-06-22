@@ -50,7 +50,7 @@ async function findTransferTxHash(
   }
 
   try {
-    const fromBlock = decisionBlock > 400n ? decisionBlock - 400n : 0n;
+    const fromBlock = decisionBlock > 800n ? decisionBlock - 800n : 0n;
 
     const logs = await getLogsChunked({
       address: TOKENS.USDC,
