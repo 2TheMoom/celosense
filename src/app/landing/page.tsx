@@ -7,11 +7,12 @@ import { publicClient, REGISTRY_ADDRESS, REGISTRY_ABI } from "@/lib/celo";
 export default function Landing() {
   const [totalRegistered, setTotalRegistered] = useState<string>("...");
   const [totalDecisions, setTotalDecisions] = useState<string>("...");
+  const [totalQueries, setTotalQueries] = useState<string>("...");
 
   useEffect(() => {
     async function fetchStats() {
       try {
-        const [registered, decisions] = await Promise.all([
+        const [registered, decisions, queries] = await Promise.all([
           publicClient.readContract({
             address: REGISTRY_ADDRESS,
             abi: REGISTRY_ABI,
@@ -22,12 +23,19 @@ export default function Landing() {
             abi: REGISTRY_ABI,
             functionName: "totalDecisions",
           }) as Promise<bigint>,
+          publicClient.readContract({
+            address: REGISTRY_ADDRESS,
+            abi: REGISTRY_ABI,
+            functionName: "totalQueries",
+          }) as Promise<bigint>,
         ]);
         setTotalRegistered(registered.toString());
         setTotalDecisions(decisions.toString());
+        setTotalQueries(queries.toString());
       } catch {
         setTotalRegistered("—");
         setTotalDecisions("—");
+        setTotalQueries("—");
       }
     }
     fetchStats();
@@ -82,6 +90,11 @@ export default function Landing() {
             <div className="land-stat">
               <span className="land-stat-value">{totalDecisions}</span>
               <span className="land-stat-label">Decisions Logged</span>
+            </div>
+            <div className="land-stat-divider" />
+            <div className="land-stat">
+              <span className="land-stat-value">{totalQueries}</span>
+              <span className="land-stat-label">Queries Paid</span>
             </div>
             <div className="land-stat-divider" />
             <div className="land-stat">
