@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useWriteContract } from "wagmi";
 import { REGISTRY_ADDRESS, REGISTRY_ABI } from "@/lib/celo";
 import { USDC_ADDRESS, USDC_ABI, QUERY_PRICE } from "@/lib/usdc";
@@ -38,6 +38,21 @@ export function IntelligencePanel({ address, isMiniPay }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [queryAddress, setQueryAddress] = useState(address);
   const [step, setStep] = useState<"idle" | "approving" | "recording" | "confirming" | "fetching">("idle");
+  const [topWhale, setTopWhale] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchTopWhale() {
+      try {
+        const res = await fetch("/api/agent/leaderboard");
+        const leaderboardData = await res.json();
+        const top = leaderboardData.leaderboard?.[0]?.address ?? null;
+        setTopWhale(top);
+      } catch {
+        setTopWhale(null);
+      }
+    }
+    fetchTopWhale();
+  }, []);
 
   const { writeContractAsync } = useWriteContract();
 
@@ -414,7 +429,7 @@ export function IntelligencePanel({ address, isMiniPay }: Props) {
           <div style={{ display: "flex", flexDirection: "column", gap: 8, maxWidth: 420, margin: "0 auto" }}>
             {[
               { label: "Your connected wallet", addr: address },
-              { label: "Example whale wallet", addr: "0x8c7C8E7fC7a8ce54C50d17523FB031FFdC203fEC" },
+              ...(topWhale ? [{ label: "Top whale from leaderboard", addr: topWhale }] : []),
             ].map((suggestion) => (
               <button
                 key={suggestion.addr}
