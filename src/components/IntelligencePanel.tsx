@@ -11,7 +11,6 @@ interface Transfer {
   amount: string;
   block: string;
   txHash: string;
-  token?: string;
 }
 
 interface IntelligenceData {
@@ -363,7 +362,7 @@ export function IntelligencePanel({ address, isMiniPay }: Props) {
           {/* ─── Recent Transfers ──────────────────────────────────────── */}
           <div className="card section-gap">
             <div className="card-title">
-              Recent Stablecoin Transfers
+              Recent USDC Transfers
               <span style={{ marginLeft: 8, color: "var(--faint)", fontWeight: 400 }}>
                 blocks {data.blockRange.from}–{data.blockRange.to}
               </span>
@@ -385,7 +384,7 @@ export function IntelligencePanel({ address, isMiniPay }: Props) {
                         {t.to?.slice(0, 6)}…{t.to?.slice(-4)}
                       </span>
                       <span className={`transfer-amount ${isWhale ? "whale" : ""}`}>
-                        {parseFloat(t.amount).toLocaleString()} {t.token || "USDC"}
+                        {parseFloat(t.amount).toLocaleString()} USDC
                       </span>
                       {isWhale && <span className="whale-tag">WHALE</span>}
                       <a href={celoscanLink} target="_blank" rel="noopener noreferrer" className="tx-link">↗</a>
@@ -403,8 +402,55 @@ export function IntelligencePanel({ address, isMiniPay }: Props) {
       )}
 
       {!data && !loading && !error && (
-        <div className="loading-text">
-          Enter a wallet address and run a query to see on-chain intelligence.
+        <div className="card section-gap" style={{ textAlign: "center", padding: "40px 24px" }}>
+          <div style={{ fontSize: 32, marginBottom: 16, opacity: 0.4 }}>⬡</div>
+          <div style={{ fontFamily: "var(--headline)", fontSize: 18, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, color: "var(--charcoal)", marginBottom: 10 }}>
+            Query any Celo wallet
+          </div>
+          <p style={{ fontFamily: "var(--body)", fontSize: 13, color: "var(--muted)", lineHeight: 1.8, marginBottom: 24, maxWidth: 380, margin: "0 auto 24px" }}>
+            Enter any wallet address above and pay $0.01 USDC to get live balances,
+            transfer history, whale detection, and an AI-generated intelligence summary.
+          </p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, maxWidth: 420, margin: "0 auto" }}>
+            {[
+              { label: "Your connected wallet", addr: address },
+              { label: "Example whale wallet", addr: "0x8c7C8E7fC7a8ce54C50d17523FB031FFdC203fEC" },
+            ].map((suggestion) => (
+              <button
+                key={suggestion.addr}
+                onClick={() => {
+                  const input = document.querySelector('input[type="text"]') as HTMLInputElement;
+                  if (input) {
+                    const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set;
+                    nativeInputValueSetter?.call(input, suggestion.addr);
+                    input.dispatchEvent(new Event('input', { bubbles: true }));
+                  }
+                }}
+                style={{
+                  background: "var(--bg)",
+                  border: "1px solid var(--border)",
+                  borderRadius: 2,
+                  padding: "10px 14px",
+                  cursor: "pointer",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  gap: 8,
+                  textAlign: "left",
+                }}
+              >
+                <div>
+                  <div style={{ fontFamily: "var(--mono)", fontSize: 10, color: "var(--muted)", marginBottom: 2, textTransform: "uppercase", letterSpacing: 1 }}>
+                    {suggestion.label}
+                  </div>
+                  <div style={{ fontFamily: "var(--mono)", fontSize: 12, color: "var(--navy)", fontWeight: 700 }}>
+                    {suggestion.addr.slice(0, 10)}…{suggestion.addr.slice(-6)}
+                  </div>
+                </div>
+                <span style={{ color: "var(--navy)", fontSize: 14 }}>→</span>
+              </button>
+            ))}
+          </div>
         </div>
       )}
     </div>
