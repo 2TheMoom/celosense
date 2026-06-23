@@ -3,7 +3,7 @@
 > Autonomous on-chain intelligence agent for the Celo ecosystem.
 > Built for Celo Proof of Ship & Celo Onchain Agents Hackathon — June 2026.
 
-CeloSense monitors Celo mainnet every 5 minutes, detects whale movements, scores wallet activity, and logs every decision permanently on-chain via the CeloSenseRegistry contract. Pay-per-query intelligence ($0.01 USDC) delivered inside MiniPay via x402 micropayments.
+CeloSense monitors Celo mainnet every 5 minutes, detects whale movements, scores wallet activity, and logs significant decisions permanently on-chain via the CeloSenseRegistry contract. Pay-per-query intelligence ($0.01 USDC) delivered inside MiniPay via x402 micropayments.
 
 **Live:** [celosense.vercel.app](https://celosense.vercel.app)
 **Contract:** [CeloSenseRegistry on Celoscan](https://celoscan.io/address/0x8a30F753942458897619A83D6467B0FF62DE7Abd#code)
@@ -16,27 +16,34 @@ CeloSense monitors Celo mainnet every 5 minutes, detects whale movements, scores
 
 ### Intelligence Tab
 - Analyzes any Celo wallet — CELO/USDC/USDT balances with live CELO/USD price
-- Scans last 1,000 blocks for USDC transfers, flags whale activity (>$10,000)
+- Scans last 1,000 blocks for USDC + USDT transfers, flags whale activity (>$10,000)
 - Computes activity score 0–100 based on transfer volume and frequency
-- **Premium Intelligence Summary Card** — natural language explanation of wallet behavior, status badge, 4 metric tiles, and signal pills
+- **Premium Intelligence Summary Card** — natural language explanation, status badge, 4 metric tiles, signal pills
+- **Wallet Overview Card** — full address with copy button and direct Celoscan link
+- **Whale Breakdown Card** — each flagged transfer with exact amount and direct tx link
+- **Dynamic wallet suggestions** — empty state shows your wallet + top whale from leaderboard
 - Pay-per-query API gated by on-chain USDC payment — $0.01 via `recordQuery()`
 
 ### Registry Tab
 - On-chain wallet registration — permanent, verifiable credential on Celo mainnet
 - **Personal Stats Card** — days registered and total queries paid on-chain
-- **Live Registration Feed** — recent `WalletRegistered` events with active/inactive status and Celoscan links
+- **Live Registration Feed** — recent `WalletRegistered` events with active/inactive status, copy button, Celoscan links
 - Tracks total registered wallets across the ecosystem
 
 ### Agent Tab
-- Autonomous agent runs every 5 minutes via cron, funded by a dedicated agent wallet
-- Classifies each run: `HIGH_WHALE_ACTIVITY` / `WHALE_DETECTED` / `HIGH_VOLUME` / `NORMAL` / `QUIET_PERIOD`
-- Logs every decision on-chain via `logDecision()` — $0.0001 USDC per decision
-- Every entry links directly to the **largest** transfer transaction on Celoscan (not just the address)
+- Autonomous agent runs every 5 minutes, only logs decisions on-chain for `WHALE_DETECTED` and `HIGH_WHALE_ACTIVITY`
+- **Activity Timeline** — hourly bar chart of decisions, crimson for whale hours
+- **Live countdown timer** — shows time until next auto-refresh
+- **Expand/collapse** decision log — shows 5 by default, expandable to full history
+- **Dynamic score badge colors** — crimson for whale, navy for high volume, green for normal
+- **Whale alert count** in header — "33 decisions · 12 whale alerts in window"
+- Every whale decision links directly to the largest transfer tx on Celoscan
 
 ### Leaderboard Tab
-- **Premium Summary Card** — total unique whales, flag count, top flagged wallet, last detection time
+- **Premium Summary Card** — intelligence-style insight on current whale activity level
 - Rankings built entirely from on-chain `DecisionLogged` events — no database
 - Medal ranking for top 3 flagged wallets with direct Celoscan transfer links
+- **Last updated timestamp** shown in footer
 - Auto-refreshes every 5 minutes in sync with the agent cycle
 
 ---
@@ -48,9 +55,10 @@ cron-job.org (every 5 min)
         ↓
   /api/agent/run
         ↓
-  Scan 500 blocks → classify → logDecision() → CeloSenseRegistry
+  Scan 500 blocks → classify activity
         ↓
-  DecisionLogged event emitted on Celo mainnet
+  WHALE_DETECTED / HIGH_WHALE_ACTIVITY → logDecision() → CeloSenseRegistry
+  NORMAL / HIGH_VOLUME / QUIET_PERIOD  → skip (no gas cost)
 
 
 MiniPay / Browser Wallet
@@ -60,7 +68,7 @@ MiniPay / Browser Wallet
   Approve USDC → recordQuery(target) → CeloSenseRegistry
         ↓
   Intelligence Agent (viem publicClient)
-  Balances · Transfers · Whale flags · Activity score · NL Summary
+  Balances · USDC+USDT Transfers · Whale flags · Activity score · NL Summary
 ```
 
 ---
@@ -209,15 +217,20 @@ Inside MiniPay the connect button is hidden. See `docs/minipay.md` for the full 
 - [x] MiniPay hook — `window.ethereum.isMiniPay` detection + auto-connect
 - [x] Smart contract deployed and verified on Celo mainnet
 - [x] On-chain query payments via `recordQuery()`
-- [x] Autonomous agent logging decisions every 5 minutes via `logDecision()`
+- [x] Autonomous agent logging whale decisions every 5 minutes
 - [x] ERC-8004 identity registry — Agent ID 9228
 - [x] Whale leaderboard with premium summary card built from on-chain events
 - [x] Live registration feed from on-chain `WalletRegistered` events
 - [x] Premium intelligence summary card with natural language analysis
+- [x] USDC + USDT transfer scanning with whale detection
+- [x] Whale breakdown card with direct transfer tx links
+- [x] Activity timeline chart on agent tab
+- [x] Dynamic wallet suggestions from live leaderboard data
 - [x] Live CELO/USD price on every balance query
 - [x] 24 passing Hardhat tests
 - [x] GitHub issue templates, CONTRIBUTING.md, SECURITY.md
 - [x] Submitted to Celo Onchain Agents Hackathon (Best Agent + Most Activity tracks)
+- [x] Celo docs PR merged (#2204) — x402 X-PAYMENT header fix
 
 ---
 
