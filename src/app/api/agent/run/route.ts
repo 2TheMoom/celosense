@@ -123,27 +123,34 @@ async function runAgent() {
 
   let currentNonce = nonce;
 
-  if (allowance < DECISION_PRICE * 1000n) {
-    // Approve a large amount to avoid repeated approvals
-    await walletClient.writeContract({
-      address: USDC_ADDRESS,
-      abi: USDC_ABI,
-      functionName: "approve",
-      args: [REGISTRY_ADDRESS, DECISION_PRICE * 1000000n],
+  // Only log on-chain for whale-level decisions — saves gas and USDC
+  // for routine NORMAL / HIGH_VOLUME / QUIET_PERIOD runs
+  const shouldLog = decisionType === "WHALE_DETECTED" || decisionType === "HIGH_WHALE_ACTIVITY";
+
+  let txHash: string | null = null;
+
+  if (shouldLog) {
+    if (allowance < DECISION_PRICE * 1000n) {
+      await walletClient.writeContract({
+        address: USDC_ADDRESS,
+        abi: USDC_ABI,
+        functionName: "approve",
+        args: [REGISTRY_ADDRESS, DECISION_PRICE * 1000000n],
+        gasPrice: bumpedGasPrice,
+        nonce: currentNonce,
+      });
+      currentNonce++;
+    }
+
+    txHash = await walletClient.writeContract({
+      address: REGISTRY_ADDRESS,
+      abi: REGISTRY_ABI,
+      functionName: "logDecision",
+      args: [decisionType, target as `0x${string}`, BigInt(score)],
       gasPrice: bumpedGasPrice,
       nonce: currentNonce,
     });
-    currentNonce++;
   }
-
-  const txHash = await walletClient.writeContract({
-    address: REGISTRY_ADDRESS,
-    abi: REGISTRY_ABI,
-    functionName: "logDecision",
-    args: [decisionType, target as `0x${string}`, BigInt(score)],
-    gasPrice: bumpedGasPrice,
-    nonce: currentNonce,
-  });
 
   return {
     decisionType,
@@ -153,7 +160,8 @@ async function runAgent() {
     totalTransfers: logs.length,
     totalVolume: formatUnits(totalVolume, 6),
     blockRange: { from: fromBlock.toString(), to: latestBlock.toString() },
-    txHash,
+    txHash: txHash ?? "skipped — non-whale decision",
+    logged: shouldLog,
     timestamp: new Date().toISOString(),
   };
 }
