@@ -35,6 +35,7 @@ export function AgentPanel() {
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
   const [whaleCount, setWhaleCount] = useState(0);
+  const [lastRun, setLastRun] = useState<any>(null);
   const [expanded, setExpanded] = useState(false);
   const [countdown, setCountdown] = useState(300); // 5 minutes in seconds
   const PREVIEW_COUNT = 5;
@@ -42,12 +43,17 @@ export function AgentPanel() {
   const fetchDecisions = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/agent/decisions");
+      const [res, statusRes] = await Promise.all([
+        fetch("/api/agent/decisions"),
+        fetch("/api/agent/status"),
+      ]);
       const data = await res.json();
+      const statusData = await statusRes.json();
       setDecisions(data.decisions || []);
       setTotal(data.total || 0);
       const whales = (data.decisions || []).filter((d: any) => d.decisionType === "WHALE_DETECTED" || d.decisionType === "HIGH_WHALE_ACTIVITY");
       setWhaleCount(whales.length);
+      if (statusData.timestamp) setLastRun(statusData);
     } catch (e) {
       console.error(e);
     } finally {
@@ -99,6 +105,41 @@ export function AgentPanel() {
           </div>
         </div>
       </div>
+
+      {/* Last run status banner */}
+      {lastRun && (
+        <div style={{
+          padding: "10px 14px",
+          background: "var(--bg)",
+          border: "1px solid var(--border)",
+          borderLeft: lastRun.logged ? "3px solid var(--crimson)" : "3px solid var(--border2)",
+          borderRadius: 2,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: 8,
+        }}>
+          <div>
+            <div style={{ fontFamily: "var(--mono)", fontSize: 10, color: "var(--muted)", marginBottom: 2, textTransform: "uppercase", letterSpacing: 1 }}>
+              Last Agent Run
+            </div>
+            <div style={{ fontFamily: "var(--mono)", fontSize: 12, color: lastRun.logged ? "var(--crimson)" : "var(--muted)", fontWeight: 700 }}>
+              {lastRun.logged
+                ? `⚠ ${lastRun.decisionType.replace(/_/g, " ")} — logged on-chain`
+                : `○ ${lastRun.decisionType.replace(/_/g, " ")} — no action taken`}
+            </div>
+            <div style={{ fontFamily: "var(--mono)", fontSize: 10, color: "var(--muted)", marginTop: 2 }}>
+              {lastRun.totalTransfers} transfers · ${parseFloat(lastRun.totalVolume).toLocaleString(undefined, { maximumFractionDigits: 0 })} USDC volume · {new Date(lastRun.timestamp).toLocaleTimeString()}
+            </div>
+          </div>
+          {lastRun.logged && lastRun.txHash && (
+            <a href={`https://celoscan.io/tx/${lastRun.txHash}`} target="_blank" rel="noopener noreferrer" className="tx-link" style={{ fontSize: 10 }}>
+              View tx ↗
+            </a>
+          )}
+        </div>
+      )}
 
       {/* Decisions feed */}
       <div className="card">

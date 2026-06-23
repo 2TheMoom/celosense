@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { setLastAgentRun } from "@/lib/agentState";
 import { publicClient, TOKENS, REGISTRY_ADDRESS, REGISTRY_ABI } from "@/lib/celo";
 import { createWalletClient, http, fallback, formatUnits, parseAbiItem, parseUnits } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
@@ -173,7 +174,21 @@ export async function GET(request: NextRequest) {
 
   try {
     const result = await runAgent();
-    console.log("Agent decision logged:", result);
+    console.log("Agent run:", result);
+
+    // Persist to module-level state so /api/agent/status can read it
+    setLastAgentRun({
+      decisionType: result.decisionType,
+      score: result.score,
+      totalTransfers: result.totalTransfers,
+      totalVolume: result.totalVolume,
+      whaleTxs: result.whaleTxs,
+      logged: result.logged,
+      txHash: typeof result.txHash === "string" && result.txHash.startsWith("0x") ? result.txHash : null,
+      timestamp: result.timestamp,
+      blockRange: result.blockRange,
+    });
+
     return NextResponse.json({ success: true, result });
   } catch (err: any) {
     console.error("Agent run error:", err);
