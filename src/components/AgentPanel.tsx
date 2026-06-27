@@ -37,8 +37,15 @@ export function AgentPanel() {
   const [whaleCount, setWhaleCount] = useState(0);
   const [lastRun, setLastRun] = useState<any>(null);
   const [expanded, setExpanded] = useState(false);
-  const [countdown, setCountdown] = useState(300); // 5 minutes in seconds
+  const [countdown, setCountdown] = useState(0);
   const PREVIEW_COUNT = 5;
+
+  // Compute real seconds until next 5-minute cron boundary
+  function getSecondsUntilNextRun(): number {
+    const now = new Date();
+    const secondsIntoWindow = (now.getMinutes() % 5) * 60 + now.getSeconds();
+    return 300 - secondsIntoWindow;
+  }
 
   const fetchDecisions = async () => {
     setLoading(true);
@@ -63,15 +70,14 @@ export function AgentPanel() {
 
   useEffect(() => {
     fetchDecisions();
-    // Refresh every 5 minutes
     const interval = setInterval(() => {
       fetchDecisions();
-      setCountdown(300);
     }, 5 * 60 * 1000);
 
-    // Countdown timer — ticks every second
+    // Countdown based on real clock — shows actual time until next cron boundary
+    setCountdown(getSecondsUntilNextRun());
     const countdownInterval = setInterval(() => {
-      setCountdown(prev => prev <= 1 ? 300 : prev - 1);
+      setCountdown(getSecondsUntilNextRun());
     }, 1000);
 
     return () => {
@@ -145,14 +151,9 @@ export function AgentPanel() {
       <div className="card">
         <div className="card-title" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <span>Decision Log</span>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontFamily: "var(--mono)", fontSize: 10, color: "var(--muted)" }}>
-              ↻ {Math.floor(countdown / 60)}:{String(countdown % 60).padStart(2, "0")}
-            </span>
-            <button className="btn btn-secondary" onClick={fetchDecisions} style={{ padding: "4px 10px", fontSize: 11 }}>
-              Refresh
-            </button>
-          </div>
+          <span style={{ fontFamily: "var(--mono)", fontSize: 10, color: "var(--muted)" }}>
+            Next run in {Math.floor(countdown / 60)}:{String(countdown % 60).padStart(2, "0")}
+          </span>
         </div>
 
         {loading ? (
