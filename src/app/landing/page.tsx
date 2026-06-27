@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { Logo } from "@/components/Logo";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { publicClient, REGISTRY_ADDRESS, REGISTRY_ABI } from "@/lib/celo";
 
 export default function Landing() {
@@ -54,6 +55,7 @@ export default function Landing() {
             <a href="https://8004scan.io/agents/celo/9228" target="_blank" rel="noopener noreferrer" className="land-nav-link">ERC-8004</a>
             <a href="https://celoscan.io/address/0x8a30F753942458897619A83D6467B0FF62DE7Abd#code" target="_blank" rel="noopener noreferrer" className="land-nav-link">Contract</a>
             <a href="https://github.com/2TheMoom/celosense" target="_blank" rel="noopener noreferrer" className="land-nav-link">GitHub</a>
+            <ThemeToggle />
             <a href="/app" className="land-btn-sm">Launch App</a>
           </div>
         </div>

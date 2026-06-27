@@ -726,3 +726,69 @@ input[type="text"]::placeholder { color: var(--faint); }
   .alert { padding: 10px 12px; font-size: 12px; }
   .land-h1 { font-size: 28px; }
 }
+
+/* ─── Dark Mode ───────────────────────────────────────────────────────────── */
+[data-theme="dark"] {
+  --bg:        #0F1117;
+  --surface:   #161B27;
+  --surface2:  #1C2233;
+  --border:    #252D3F;
+  --border2:   #2E3850;
+  --text:      #E8EAF0;
+  --muted:     #8891A8;
+  --faint:     #4A5268;
+  --navy:      #4B7BF5;
+  --navy-dim:  #3A63D4;
+  --green:     #2ECC71;
+  --green-dim: #25A85C;
+  --crimson:   #E8445A;
+  --crimson-dim: #C43348;
+  --charcoal:  #E8EAF0;
+}
+
+[data-theme="dark"] body {
+  background: var(--bg);
+  color: var(--text);
+}
+
+[data-theme="dark"] .statusbar {
+  background: #0A0D14;
+}
+
+[data-theme="dark"] input[type="text"] {
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--border2);
+}
+
+[data-theme="dark"] input[type="text"]:focus {
+  border-color: var(--navy);
+}
+
+[data-theme="dark"] .btn-secondary {
+  border-color: var(--border2);
+  color: var(--text);
+}
+
+[data-theme="dark"] .btn-secondary:hover {
+  border-color: var(--navy);
+  color: var(--navy);
+}
+
+[data-theme="dark"] .land {
+  background: var(--bg);
+}
+
+[data-theme="dark"] .land-nav {
+  background: var(--bg);
+  border-color: var(--border);
+}
+
+[data-theme="dark"] .land-cta-banner {
+  background: #0A0D14;
+}
+
+[data-theme="dark"] .land-footer {
+  background: var(--bg);
+  border-color: var(--border);
+}

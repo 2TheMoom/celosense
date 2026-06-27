@@ -8,6 +8,7 @@ import { RegistryPanel } from "@/components/RegistryPanel";
 import { AgentPanel } from "@/components/AgentPanel";
 import { LeaderboardPanel } from "@/components/LeaderboardPanel";
 import { Logo } from "@/components/Logo";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { publicClient, REGISTRY_ADDRESS, REGISTRY_ABI } from "@/lib/celo";
 
 export default function Home() {
@@ -57,6 +58,7 @@ export default function Home() {
             </span>
           )}
           {mounted && !isMiniPay && !isDetecting && <WalletConnect />}
+          <ThemeToggle />
         </div>
       </header>
 
