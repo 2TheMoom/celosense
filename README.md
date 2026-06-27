@@ -21,7 +21,7 @@ CeloSense monitors Celo mainnet every 5 minutes, detects whale movements, scores
 - **Premium Intelligence Summary Card** — natural language explanation, status badge, 4 metric tiles, signal pills
 - **Wallet Overview Card** — full address with copy button and direct Celoscan link
 - **Whale Breakdown Card** — each flagged transfer with exact amount and direct tx link
-- **Dynamic wallet suggestions** — empty state shows your wallet + top whale from leaderboard
+- **Dynamic wallet suggestions** — empty state shows your wallet + top whale from live leaderboard
 - Pay-per-query API gated by on-chain USDC payment — $0.01 via `recordQuery()`
 
 ### Registry Tab
@@ -31,16 +31,17 @@ CeloSense monitors Celo mainnet every 5 minutes, detects whale movements, scores
 - Tracks total registered wallets across the ecosystem
 
 ### Agent Tab
-- Autonomous agent runs every 5 minutes, only logs decisions on-chain for `WHALE_DETECTED` and `HIGH_WHALE_ACTIVITY`
+- Autonomous agent runs every 5 minutes — only logs decisions on-chain for `WHALE_DETECTED` and `HIGH_WHALE_ACTIVITY`
+- **Last Run Status Banner** — shows most recent agent run with decision type, transfer volume, and "no action taken" message for non-whale runs
 - **Activity Timeline** — hourly bar chart of decisions, crimson for whale hours
-- **Live countdown timer** — shows time until next auto-refresh
+- **Real-time countdown** — shows exact time until next cron run based on the actual clock
 - **Expand/collapse** decision log — shows 5 by default, expandable to full history
 - **Dynamic score badge colors** — crimson for whale, navy for high volume, green for normal
-- **Whale alert count** in header — "33 decisions · 12 whale alerts in window"
+- **Whale alert count** in header — shows decisions count and whale alerts in current window
 - Every whale decision links directly to the largest transfer tx on Celoscan
 
 ### Leaderboard Tab
-- **Premium Summary Card** — intelligence-style insight on current whale activity level
+- **Premium Summary Card** — intelligence-style insight classifying current activity as elevated/moderate/low
 - Rankings built entirely from on-chain `DecisionLogged` events — no database
 - Medal ranking for top 3 flagged wallets with direct Celoscan transfer links
 - **Last updated timestamp** shown in footer
@@ -58,7 +59,9 @@ cron-job.org (every 5 min)
   Scan 500 blocks → classify activity
         ↓
   WHALE_DETECTED / HIGH_WHALE_ACTIVITY → logDecision() → CeloSenseRegistry
-  NORMAL / HIGH_VOLUME / QUIET_PERIOD  → skip (no gas cost)
+  NORMAL / HIGH_VOLUME / QUIET_PERIOD  → skip (no gas cost) → save to module state
+        ↓
+  /api/agent/status → returns last run regardless of whether it was logged
 
 
 MiniPay / Browser Wallet
@@ -118,8 +121,9 @@ totalDecisions                                          // All-time agent decisi
 | Payments | x402 protocol, on-chain USDC |
 | Contract | Solidity 0.8.20, Hardhat |
 | Chain | Celo Mainnet (Chain ID 42220) |
-| RPC | forno.celo.org + rpc.ankr.com/celo (fallback) |
+| RPC | forno.celo.org + rpc.ankr.com/celo (fallback, chunked queries) |
 | Cron | cron-job.org (every 5 min) + Vercel daily backup |
+| State | Module-level in-memory store for non-whale agent runs |
 | Deployment | Vercel |
 
 ---
@@ -140,6 +144,20 @@ CeloSenseRegistry - logDecision()   8 tests
 
 24 passing
 ```
+
+---
+
+## API Routes
+
+| Route | Purpose |
+|-------|---------|
+| `GET /api/intelligence` | Verify payment, fetch wallet intelligence + NL summary |
+| `GET /api/register` | Registration status, days registered, query count |
+| `GET /api/registry/feed` | Live WalletRegistered event feed |
+| `GET /api/agent/run` | Cron endpoint — scans chain, logs whale decisions |
+| `GET /api/agent/decisions` | DecisionLogged event feed with transfer tx lookup |
+| `GET /api/agent/leaderboard` | Whale flag rankings aggregated from on-chain events |
+| `GET /api/agent/status` | Last agent run status (whale or not) from module state |
 
 ---
 
@@ -169,7 +187,7 @@ CRON_SECRET=                    # Bearer token for /api/agent/run endpoint
 CELOSCAN_API_KEY=               # For contract verification
 ```
 
-> ⚠️ **AGENT_PRIVATE_KEY** must be the private key for the dedicated agent wallet, not your personal wallet. The `logDecision()` function uses an `onlyAgent` modifier — calls from any other wallet will revert.
+> ⚠️ **AGENT_PRIVATE_KEY** must be the private key for the dedicated agent wallet. The `logDecision()` function uses an `onlyAgent` modifier — calls from any other wallet will revert.
 
 ---
 
@@ -185,8 +203,6 @@ npx hardhat verify --network celo <ADDRESS> \
 ---
 
 ## MiniPay integration
-
-CeloSense detects MiniPay via `window.ethereum.isMiniPay` and auto-connects:
 
 ```ts
 // src/hooks/useMiniPay.ts
@@ -217,15 +233,17 @@ Inside MiniPay the connect button is hidden. See `docs/minipay.md` for the full 
 - [x] MiniPay hook — `window.ethereum.isMiniPay` detection + auto-connect
 - [x] Smart contract deployed and verified on Celo mainnet
 - [x] On-chain query payments via `recordQuery()`
-- [x] Autonomous agent logging whale decisions every 5 minutes
+- [x] Autonomous agent — only logs whale decisions, shows non-whale status via module state
 - [x] ERC-8004 identity registry — Agent ID 9228
 - [x] Whale leaderboard with premium summary card built from on-chain events
 - [x] Live registration feed from on-chain `WalletRegistered` events
 - [x] Premium intelligence summary card with natural language analysis
-- [x] USDC + USDT transfer scanning with whale detection
-- [x] Whale breakdown card with direct transfer tx links
+- [x] USDC + USDT transfer scanning with whale breakdown card
+- [x] Wallet overview card with copy button on intelligence results
+- [x] Dynamic whale suggestion from live leaderboard in empty state
 - [x] Activity timeline chart on agent tab
-- [x] Dynamic wallet suggestions from live leaderboard data
+- [x] Real-time countdown to next cron run based on actual clock
+- [x] Last run status banner showing non-whale runs with "no action taken"
 - [x] Live CELO/USD price on every balance query
 - [x] 24 passing Hardhat tests
 - [x] GitHub issue templates, CONTRIBUTING.md, SECURITY.md
